@@ -33,6 +33,7 @@ def create_app() -> FastAPI:
         openapi_tags=OPENAPI_TAGS,
         docs_url="/docs",
         redoc_url="/redoc",
+        root_path=settings.root_path,
     )
 
     app.add_middleware(

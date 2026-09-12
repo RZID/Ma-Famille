@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     backend_cors_origins: str = "http://localhost:5173,http://localhost:3000"
     database_url: str = "postgresql+psycopg://mafamille:mafamille@localhost:5432/mafamille"
+    # Subpath hosting: "/ma-famille" in prod (college.rzidinc.com/ma-famille),
+    # "" for local dev. FastAPI strips this prefix before routing and uses it
+    # when generating /docs and /openapi.json URLs.
+    root_path: str = ""
     doku_client_id: str = ""
     doku_secret_key: str = ""
     doku_base_url: str = "https://api-sandbox.doku.com"
