@@ -1,48 +1,65 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.db.session import get_db
 from app.schemas.court import CourtCreate, CourtResponse, CourtUpdate
+from app.services import courts as court_service
 
 router = APIRouter(prefix="/courts", tags=["courts"])
 
-_TODO = "TODO: court store not wired yet"
 
-
-@router.get("", summary="TODO: list courts (filter by venue)")
-def list_courts(venue_public_id: UUID | None = None) -> list[CourtResponse]:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_TODO)
-
-
-@router.post(
-    "",
-    summary="TODO: create court (manager)",
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-)
-def create_court(_body: CourtCreate) -> CourtResponse:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_TODO)
-
-
-@router.get("/{public_id}", summary="TODO: get court")
-def get_court(public_id: UUID) -> CourtResponse:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"{_TODO}: {public_id}"
+def _to_response(db: Session, court) -> CourtResponse:
+    return CourtResponse(
+        public_id=court.public_id,
+        venue_public_id=court_service.venue_public_id(db, court),
+        name=court.name,
+        sport=court.sport,
+        price_weekday=court.price_weekday,
+        price_weekend=court.price_weekend,
+        is_active=court.is_active,
+        created_at=court.created_at,
     )
 
 
-@router.patch("/{public_id}", summary="TODO: update court pricing (manager)")
-def update_court(public_id: UUID, _body: CourtUpdate) -> CourtResponse:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"{_TODO}: {public_id}"
-    )
+@router.get("", summary="List courts (filter by venue)")
+def list_courts(
+    venue_public_id: UUID | None = None, db: Session = Depends(get_db)
+) -> list[CourtResponse]:
+    courts = court_service.list_courts(db, venue_public_id)
+    return [_to_response(db, c) for c in courts]
 
 
-@router.delete(
-    "/{public_id}",
-    summary="TODO: deactivate court (manager)",
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-)
-def delete_court(public_id: UUID) -> None:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"{_TODO}: {public_id}"
-    )
+@router.post("", summary="Create court (manager)", status_code=201)
+def create_court(body: CourtCreate, db: Session = Depends(get_db)) -> CourtResponse:
+    court = court_service.create_court(db, body)
+    if court is None:
+        raise HTTPException(status_code=404, detail="venue not found")
+    return _to_response(db, court)
+
+
+@router.get("/{public_id}", summary="Get court")
+def get_court(public_id: UUID, db: Session = Depends(get_db)) -> CourtResponse:
+    court = court_service.get_by_public_id(db, public_id)
+    if court is None:
+        raise HTTPException(status_code=404, detail="court not found")
+    return _to_response(db, court)
+
+
+@router.patch("/{public_id}", summary="Update court pricing (manager)")
+def update_court(
+    public_id: UUID, body: CourtUpdate, db: Session = Depends(get_db)
+) -> CourtResponse:
+    court = court_service.get_by_public_id(db, public_id)
+    if court is None:
+        raise HTTPException(status_code=404, detail="court not found")
+    return _to_response(db, court_service.update_court(db, court, body))
+
+
+@router.delete("/{public_id}", summary="Deactivate court (manager)", status_code=204)
+def delete_court(public_id: UUID, db: Session = Depends(get_db)) -> None:
+    court = court_service.get_by_public_id(db, public_id)
+    if court is None:
+        raise HTTPException(status_code=404, detail="court not found")
+    court_service.deactivate_court(db, court)
