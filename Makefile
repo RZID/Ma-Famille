@@ -1,13 +1,25 @@
-.PHONY: help backend-install backend-dev backend-test backend-lint db-up db-down db-migrate db-upgrade db-downgrade frontend-install frontend-dev frontend-build test
+.PHONY: help backend-install backend-dev backend-test backend-lint db-up db-down db-logs db-migrate db-upgrade db-downgrade frontend-install frontend-dev frontend-build test
+
+# Container engine: docker (default) or podman.
+# Usage: make db-up                    # docker
+#        make db-up CONTAINER_ENGINE=podman
+#        export CONTAINER_ENGINE=podman  # persist for session
+CONTAINER_ENGINE ?= docker
+ifeq ($(CONTAINER_ENGINE),podman)
+COMPOSE ?= podman compose
+else
+COMPOSE ?= docker compose
+endif
 
 help:
-	@echo "ma-famille monorepo"
+	@echo "ma-famille monorepo (engine: $(CONTAINER_ENGINE))"
 	@echo "  make backend-install   install backend deps (pip)"
 	@echo "  make backend-dev       run FastAPI dev server"
 	@echo "  make backend-test      run backend pytest"
 	@echo "  make backend-lint      run ruff check backend"
-	@echo "  make db-up             start local PostgreSQL (docker compose)"
+	@echo "  make db-up             start local PostgreSQL ($(COMPOSE))"
 	@echo "  make db-down           stop local PostgreSQL"
+	@echo "  make db-logs           follow db logs"
 	@echo "  make db-migrate m=\"msg\"  create Alembic revision (autogenerate)"
 	@echo "  make db-upgrade        apply migrations (alembic upgrade head)"
 	@echo "  make db-downgrade      rollback one migration"
@@ -29,10 +41,13 @@ backend-lint:
 	ruff check backend
 
 db-up:
-	docker compose up -d db
+	$(COMPOSE) up -d db
 
 db-down:
-	docker compose down
+	$(COMPOSE) down
+
+db-logs:
+	$(COMPOSE) logs -f db
 
 db-migrate:
 	cd backend && alembic revision --autogenerate -m "$(m)"

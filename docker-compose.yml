@@ -1,3 +1,6 @@
+# Local PostgreSQL. Works with Docker and Podman (compose spec, no engine-specific keys).
+# Docker: make db-up
+# Podman: make db-up CONTAINER_ENGINE=podman
 services:
   db:
     image: postgres:16-alpine

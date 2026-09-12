@@ -16,12 +16,36 @@ with in-memory SQLite, so `pytest` needs no live DB — but CI also runs
 
 ```bash
 cp backend/.env.example backend/.env
-make db-up            # postgres:16 via docker compose
+make db-up            # postgres:16 via docker (default)
 make db-upgrade       # alembic upgrade head
 make backend-dev      # uvicorn :8000
 # GET /api/v1/health      liveness (no DB)
 # GET /api/v1/health/db   readiness (SELECT 1)
 ```
+
+## Podman (optional, Docker stays default)
+
+Compose file uses only the portable compose spec — no engine-specific keys —
+so the same `docker-compose.yml` runs under Podman.
+
+```bash
+make db-up CONTAINER_ENGINE=podman
+make db-logs CONTAINER_ENGINE=podman
+make db-down CONTAINER_ENGINE=podman
+
+# or persist for the session:
+export CONTAINER_ENGINE=podman
+make db-up
+```
+
+Notes:
+
+- Requires Podman 4.1+ with the `compose` subcommand (`podman compose version`).
+  If only the standalone `podman-compose` script is installed, override instead:
+  `make db-up COMPOSE="podman-compose"`.
+- Named volume `pgdata` (not a bind mount), so no `:Z` SELinux relabel is needed.
+- Rootless Podman can bind port 5432 (above 1024) without extra setup.
+- CI (GitHub Actions) keeps using Docker; Podman is local-dev only.
 
 ## Migrations
 
