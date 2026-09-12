@@ -9,10 +9,17 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     backend_cors_origins: str = "http://localhost:5173,http://localhost:3000"
     database_url: str = "postgresql+psycopg://mafamille:mafamille@localhost:5432/mafamille"
+    doku_client_id: str = ""
+    doku_secret_key: str = ""
+    doku_base_url: str = "https://api-sandbox.doku.com"
 
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.backend_cors_origins.split(",") if o.strip()]
+
+    @property
+    def doku_configured(self) -> bool:
+        return bool(self.doku_client_id and self.doku_secret_key)
 
 
 settings = Settings()
