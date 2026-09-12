@@ -43,3 +43,45 @@ def test_checkout_passthrough_when_doku_mocked(monkeypatch):
     )
     assert res.status_code == 200
     assert res.json()["checkout_url"] == "https://pay.test/x"
+
+
+WEBHOOK_PATH = "/api/v1/payments/webhook/doku"
+
+
+def test_webhook_verifies_signature_and_maps_status(monkeypatch):
+    import json
+
+    from app.api.v1 import payments
+    from app.core.config import settings
+    from app.services import doku
+
+    monkeypatch.setattr(settings, "doku_client_id", "MCH-TEST")
+    monkeypatch.setattr(settings, "doku_secret_key", "secret-test")
+
+    def signed_post(payload: dict, secret="secret-test"):
+        raw = json.dumps(payload, separators=(",", ":")).encode()
+        headers = {
+            "Client-Id": "MCH-TEST",
+            "Request-Id": "req-1",
+            "Request-Timestamp": "2026-09-12T00:00:00Z",
+            "Signature": doku.build_signature(
+                client_id="MCH-TEST",
+                request_id="req-1",
+                timestamp="2026-09-12T00:00:00Z",
+                request_target=payments.WEBHOOK_TARGET,
+                digest=doku.build_digest(raw),
+                secret=secret,
+            ),
+        }
+        return client.post(WEBHOOK_PATH, content=raw, headers=headers)
+
+    ok_body = {
+        "order": {"invoice_number": "MAF-1", "amount": 50000},
+        "transaction": {"status": "SUCCESS"},
+    }
+    res = signed_post(ok_body)
+    assert res.status_code == 200, res.text
+    assert res.json()["payment_status"] == "paid"
+
+    res = signed_post(ok_body, secret="wrong")
+    assert res.status_code == 401

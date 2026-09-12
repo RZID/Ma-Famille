@@ -27,3 +27,9 @@ class PaymentInitiateResponse(BaseModel):
     invoice_number: str
     checkout_url: str
     token_id: str = ""
+
+
+class DokuWebhookAck(BaseModel):
+    invoice_number: str
+    payment_status: str
+    detail: str = "TODO: match to payment store"
