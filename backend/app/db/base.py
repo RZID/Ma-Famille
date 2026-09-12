@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, Uuid, func
+from sqlalchemy import DateTime, Integer, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.core.ids import uuid7
@@ -16,9 +16,12 @@ class Base(DeclarativeBase):
 
 
 class PKMixin:
-    """System-level PK: autoincrement integer, internal use (FKs/joins)."""
+    """System-level PK: autoincrement integer, internal use (FKs/joins).
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    Plain Integer (not BigInteger) so SQLite also autoincrements in tests.
+    """
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
 
 class PublicIdMixin:

@@ -18,7 +18,7 @@ Two ids per row (see `app/db/base.py`):
 
 | Column | Type | Scope |
 |---|---|---|
-| `id` | `BigInteger` PK, autoincrement | system-level: FKs, joins, migrations |
+| `id` | `Integer` PK, autoincrement | system-level: FKs, joins, migrations |
 | `public_id` | UUIDv7, unique + indexed, `default=uuid7` | client-side: URLs, payloads |
 
 Why UUIDv7 over random v4 GUIDs: v7 embeds a millisecond timestamp, so values
