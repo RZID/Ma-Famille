@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.schemas.venue import VenueCreate, VenueResponse, VenueUpdate
 from app.services import venues as venue_service
@@ -24,7 +25,10 @@ def list_venues(db: Session = Depends(get_db)) -> list[VenueResponse]:
     return [_to_response(v) for v in venue_service.list_venues(db)]
 
 
-@router.post("", summary="Create venue (manager)", response_model=VenueResponse, status_code=201)
+@router.post(
+    "", summary="Create venue (manager)", response_model=VenueResponse, status_code=201,
+    dependencies=[Depends(require_manager)],
+)
 def create_venue(body: VenueCreate, db: Session = Depends(get_db)) -> VenueResponse:
     return _to_response(venue_service.create_venue(db, body))
 
@@ -37,7 +41,12 @@ def get_venue(public_id: UUID, db: Session = Depends(get_db)) -> VenueResponse:
     return _to_response(venue)
 
 
-@router.patch("/{public_id}", summary="Update venue (manager)", response_model=VenueResponse)
+@router.patch(
+    "/{public_id}",
+    summary="Update venue (manager)",
+    response_model=VenueResponse,
+    dependencies=[Depends(require_manager)],
+)
 def update_venue(
     public_id: UUID, body: VenueUpdate, db: Session = Depends(get_db)
 ) -> VenueResponse:
@@ -47,7 +56,12 @@ def update_venue(
     return _to_response(venue_service.update_venue(db, venue, body))
 
 
-@router.delete("/{public_id}", summary="Delete venue (manager)", status_code=204)
+@router.delete(
+    "/{public_id}",
+    summary="Delete venue (manager)",
+    status_code=204,
+    dependencies=[Depends(require_manager)],
+)
 def delete_venue(public_id: UUID, db: Session = Depends(get_db)) -> None:
     venue = venue_service.get_by_public_id(db, public_id)
     if venue is None:

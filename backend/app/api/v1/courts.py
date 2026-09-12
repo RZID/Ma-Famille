@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.schemas.court import CourtCreate, CourtResponse, CourtUpdate
 from app.services import courts as court_service
@@ -31,7 +32,12 @@ def list_courts(
     return [_to_response(db, c) for c in courts]
 
 
-@router.post("", summary="Create court (manager)", status_code=201)
+@router.post(
+    "",
+    summary="Create court (manager)",
+    status_code=201,
+    dependencies=[Depends(require_manager)],
+)
 def create_court(body: CourtCreate, db: Session = Depends(get_db)) -> CourtResponse:
     court = court_service.create_court(db, body)
     if court is None:
@@ -47,7 +53,11 @@ def get_court(public_id: UUID, db: Session = Depends(get_db)) -> CourtResponse:
     return _to_response(db, court)
 
 
-@router.patch("/{public_id}", summary="Update court pricing (manager)")
+@router.patch(
+    "/{public_id}",
+    summary="Update court pricing (manager)",
+    dependencies=[Depends(require_manager)],
+)
 def update_court(
     public_id: UUID, body: CourtUpdate, db: Session = Depends(get_db)
 ) -> CourtResponse:
@@ -57,7 +67,12 @@ def update_court(
     return _to_response(db, court_service.update_court(db, court, body))
 
 
-@router.delete("/{public_id}", summary="Deactivate court (manager)", status_code=204)
+@router.delete(
+    "/{public_id}",
+    summary="Deactivate court (manager)",
+    status_code=204,
+    dependencies=[Depends(require_manager)],
+)
 def delete_court(public_id: UUID, db: Session = Depends(get_db)) -> None:
     court = court_service.get_by_public_id(db, public_id)
     if court is None:

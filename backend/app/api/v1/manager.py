@@ -3,13 +3,16 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.schemas.booking import BookingResponse
 from app.schemas.manager import OccupancyPoint
 from app.services import bookings as booking_service
 from app.services import manager as manager_service
 
-router = APIRouter(prefix="/manager", tags=["manager"])
+router = APIRouter(
+    prefix="/manager", tags=["manager"], dependencies=[Depends(require_manager)]
+)
 
 
 @router.get("/bookings", summary="Incoming bookings (manager)")

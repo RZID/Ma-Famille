@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.models.booking import Booking
 from app.schemas.payment import (
@@ -82,7 +83,11 @@ def list_payments(
     return [_to_response(db, p) for p in payments]
 
 
-@router.post("/{public_id}/mark-paid", summary="Mark payment paid (manager)")
+@router.post(
+    "/{public_id}/mark-paid",
+    summary="Mark payment paid (manager)",
+    dependencies=[Depends(require_manager)],
+)
 def mark_paid(public_id: UUID, db: Session = Depends(get_db)) -> PaymentResponse:
     payment = payment_service.get_by_public_id(db, public_id)
     if payment is None:

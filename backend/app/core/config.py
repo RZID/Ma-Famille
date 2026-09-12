@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     doku_client_id: str = ""
     doku_secret_key: str = ""
     doku_base_url: str = "https://api-sandbox.doku.com"
+    # Empty = open (local dev). Production sets this in backend/.env.
+    manager_token: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

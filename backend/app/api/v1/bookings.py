@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.schemas.booking import BookingCreate, BookingResponse
 from app.services import bookings as booking_service
@@ -54,7 +55,11 @@ def get_booking(public_id: UUID, db: Session = Depends(get_db)) -> BookingRespon
     return _to_response(db, booking)
 
 
-@router.post("/{public_id}/confirm", summary="Confirm booking (deposit/manager)")
+@router.post(
+    "/{public_id}/confirm",
+    summary="Confirm booking (deposit/manager)",
+    dependencies=[Depends(require_manager)],
+)
 def confirm_booking(public_id: UUID, db: Session = Depends(get_db)) -> BookingResponse:
     booking = booking_service.get_by_public_id(db, public_id)
     if booking is None:

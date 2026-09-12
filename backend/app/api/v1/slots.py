@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import require_manager
 from app.db.session import get_db
 from app.schemas.slot import SlotCreate, SlotResponse, SlotUpdate
 from app.services import slots as slot_service
@@ -32,7 +33,12 @@ def list_slots(
     return [_to_response(db, s) for s in slots]
 
 
-@router.post("", summary="Create slots (manager)", status_code=201)
+@router.post(
+    "",
+    summary="Create slots (manager)",
+    status_code=201,
+    dependencies=[Depends(require_manager)],
+)
 def create_slots(
     body: list[SlotCreate], db: Session = Depends(get_db)
 ) -> list[SlotResponse]:
@@ -50,7 +56,11 @@ def get_slot(public_id: UUID, db: Session = Depends(get_db)) -> SlotResponse:
     return _to_response(db, slot)
 
 
-@router.patch("/{public_id}", summary="Open/close slot (manager)")
+@router.patch(
+    "/{public_id}",
+    summary="Open/close slot (manager)",
+    dependencies=[Depends(require_manager)],
+)
 def update_slot(
     public_id: UUID, body: SlotUpdate, db: Session = Depends(get_db)
 ) -> SlotResponse:
