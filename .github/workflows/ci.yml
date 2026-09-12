@@ -38,6 +38,9 @@ jobs:
       - name: Migrate
         run: alembic upgrade head
         working-directory: backend
+      - name: Seed smoke test
+        run: python -m app.db.seed && python -m app.db.seed
+        working-directory: backend
       - name: Test
         run: pytest backend/tests -v
 
