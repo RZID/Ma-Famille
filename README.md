@@ -35,8 +35,8 @@ cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 
-# 2. backend
-pip install -r backend/requirements-dev.txt
+# 2. backend (uv recommended: curl -LsSf https://astral.sh/uv/install.sh | sh)
+make backend-install
 make backend-dev
 # -> http://localhost:8000/docs
 # -> http://localhost:8000/api/v1/health

@@ -3,8 +3,8 @@
 ## Dev
 
 ```bash
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload --app-dir . --port 8000
+make backend-install   # creates .venv (uv if present) + installs deps
+make backend-dev       # uvicorn :8000 via .venv
 ```
 
 Endpoints:

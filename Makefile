@@ -1,4 +1,9 @@
-.PHONY: help backend-install backend-dev backend-test backend-lint db-up db-down db-logs db-migrate db-upgrade db-downgrade frontend-install frontend-dev frontend-build test
+.PHONY: help backend-venv backend-install backend-dev backend-test backend-lint db-up db-down db-logs db-migrate db-upgrade db-downgrade frontend-install frontend-dev frontend-build test
+
+# Python env: all backend targets run inside .venv (no global pip needed).
+# `make backend-install` creates it (via uv if present) and installs deps.
+VENV ?= .venv
+PY := $(CURDIR)/$(VENV)/bin/python
 
 # Container engine: docker (default) or podman.
 # Usage: make db-up                    # docker
@@ -12,8 +17,9 @@ COMPOSE ?= docker compose
 endif
 
 help:
-	@echo "ma-famille monorepo (engine: $(CONTAINER_ENGINE))"
-	@echo "  make backend-install   install backend deps (pip)"
+	@echo "ma-famille monorepo (engine: $(CONTAINER_ENGINE), venv: $(VENV))"
+	@echo "  make backend-venv      create project venv (.venv)"
+	@echo "  make backend-install   install backend deps into venv"
 	@echo "  make backend-dev       run FastAPI dev server"
 	@echo "  make backend-test      run backend pytest"
 	@echo "  make backend-lint      run ruff check backend"
@@ -28,17 +34,20 @@ help:
 	@echo "  make frontend-build    build frontend"
 	@echo "  make test              run all tests"
 
-backend-install:
-	pip install -r backend/requirements-dev.txt
+backend-venv:
+	@test -x $(PY) || (command -v uv >/dev/null && uv venv $(VENV) || python3 -m venv $(VENV))
+
+backend-install: backend-venv
+	@if command -v uv >/dev/null; then uv pip install --python $(PY) -r backend/requirements-dev.txt; else $(PY) -m pip install -r backend/requirements-dev.txt; fi
 
 backend-dev:
-	uvicorn app.main:app --reload --app-dir backend --port 8000
+	$(PY) -m uvicorn app.main:app --reload --app-dir backend --port 8000
 
 backend-test:
-	pytest backend/tests -v
+	$(PY) -m pytest backend/tests -v
 
 backend-lint:
-	ruff check backend
+	$(PY) -m ruff check backend
 
 db-up:
 	$(COMPOSE) up -d db
@@ -50,13 +59,13 @@ db-logs:
 	$(COMPOSE) logs -f db
 
 db-migrate:
-	cd backend && alembic revision --autogenerate -m "$(m)"
+	cd backend && $(PY) -m alembic revision --autogenerate -m "$(m)"
 
 db-upgrade:
-	cd backend && alembic upgrade head
+	cd backend && $(PY) -m alembic upgrade head
 
 db-downgrade:
-	cd backend && alembic downgrade -1
+	cd backend && $(PY) -m alembic downgrade -1
 
 frontend-install:
 	npm --prefix frontend install
