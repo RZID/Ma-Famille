@@ -16,11 +16,13 @@ No shared package yet. Contract between FE/BE is HTTP + `docs/API_CONTRACT.md`.
 
 - `main.py` — app factory, CORS, includes `api/v1` router. No business logic here.
 - `core/config.py` — `pydantic-settings`. All env via `Settings`, never `os.getenv` scattered.
-- `api/v1/` — one router per domain file, composed in `api/v1/router.py`.
-  Current: `health.py`. Next: `venues.py`, `courts.py`, `slots.py`, `bookings.py`, `payments.py`.
-- `models/` — persistence models (planned).
-- `schemas/` — request/response Pydantic models (planned).
-- `services/` — availability + overlap prevention (planned). Routers stay thin.
+- `api/v1/` — one router per domain file, composed in `api/v1/router.py`:
+  `health`, `venues`, `courts`, `slots`, `bookings`, `payments`, `manager`.
+- `models/` — `Venue`, `Court`, `Slot`, `Booking`, `Payment` (integer PK +
+  UUIDv7 `public_id`, see ADR 0005).
+- `schemas/` — request/response Pydantic models per domain.
+- `services/` — availability, conflict guard, DOKU client, occupancy.
+  Routers stay thin.
 
 Rules:
 
@@ -38,10 +40,10 @@ Rules:
 
 Flow: `view → store action → services/api.js → backend → store state → view`.
 
-## Data (planned)
+## Data
 
-`Venue 1—* Court 1—* Slot 1—* Booking 1—1 Payment`.
-Overlap guard lives in backend service + DB constraint, never only in UI.
+`Venue 1—* Court 1—* Slot 1—* Booking 1—* Payment`.
+Overlap guard lives in backend service + partial unique index, never only in UI.
 
 ## Environments
 

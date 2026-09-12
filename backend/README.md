@@ -36,13 +36,14 @@ backend/
   app/
     main.py          # app factory, CORS, router wiring
     core/config.py   # pydantic-settings (incl. DATABASE_URL)
-    db/              # Base, engine, SessionLocal, get_db
-    api/v1/          # versioned routers (health + future domains)
-    models/          # ORM / domain models (planned: Venue, Court, Slot, Booking, Payment)
-    schemas/         # Pydantic schemas (planned)
-    services/        # business logic (planned: availability, conflict checks)
-  tests/             # pytest
+    core/security.py # X-Manager-Token gate
+    db/              # Base, mixins, engine, SessionLocal, get_db, seed
+    api/v1/          # health, venues, courts, slots, bookings, payments, manager
+    models/          # Venue, Court, Slot, Booking, Payment
+    schemas/         # Pydantic request/response models
+    services/        # business logic (conflict guard, DOKU client, occupancy)
+  tests/             # pytest (SQLite override, no live DB needed)
 ```
 
-Domain modules are intentionally empty in the foundation iteration.
-See `docs/API_CONTRACT.md` for the planned entities.
+Manager writes need `X-Manager-Token` (see `MANAGER_TOKEN` in `.env.example`).
+Payments go through the DOKU sandbox — see `docs/PAYMENTS.md`.

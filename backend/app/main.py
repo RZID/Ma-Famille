@@ -7,21 +7,22 @@ from app.schemas.health import RootResponse
 
 DESCRIPTION = """Sports Venue Booking API (futsal / badminton courts).
 
-Domain routes (Venue, Court, Slot, Booking, Payment, Manager) exist as TODO
-stubs returning 501 — Swagger-first, store logic lands per group next.
+Venues, courts, slots, bookings, payments and the manager dashboard are
+wired to the store. `POST /payments` needs DOKU sandbox keys, otherwise it
+answers 501 — everything else is live.
 """
 
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness probes."},
-    {"name": "venues", "description": "TODO: venue CRUD (manager) + public list."},
-    {"name": "courts", "description": "TODO: courts with weekday/weekend rates."},
-    {"name": "slots", "description": "TODO: availability calendar per court per day."},
+    {"name": "venues", "description": "Venue CRUD (writes: manager) + public list."},
+    {"name": "courts", "description": "Courts with weekday/weekend rates."},
+    {"name": "slots", "description": "Availability calendar per court per day."},
     {
         "name": "bookings",
-        "description": "TODO: booking with conflict check, history, confirm/cancel.",
+        "description": "Booking with conflict check, history, confirm/cancel.",
     },
-    {"name": "payments", "description": "TODO: deposit/paid status (no gateway)."},
-    {"name": "manager", "description": "TODO: incoming bookings + occupancy chart."},
+    {"name": "payments", "description": "Deposit/paid via DOKU sandbox + webhook."},
+    {"name": "manager", "description": "Incoming bookings + occupancy chart."},
 ]
 
 

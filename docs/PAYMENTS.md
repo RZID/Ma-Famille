@@ -33,9 +33,8 @@ No DOKU account yet? Preview the same flow with no sign-up at
 - The endpoint recomputes `Digest` + `HMACSHA256` signature from
   `app/services/doku.py` and rejects mismatches with `401`.
 - `transaction.status: SUCCESS` maps to `paid`, anything else to
-  `pending`/`failed`. Matching the invoice to a payment row is still TODO
-  (lands with the Payment model); the endpoint currently acks with the
-  parsed invoice + status.
+  `pending`/`failed`. The invoice is matched to its payment row and a `paid`
+  notification auto-confirms a pending booking.
 - Local dev: expose the API publicly first (e.g. `ngrok http 8000`), then
   paste `https://<you>.ngrok.io/api/v1/payments/webhook/doku` as the
   Notification URL in the DOKU sandbox dashboard.

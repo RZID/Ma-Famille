@@ -2,14 +2,14 @@
 
 Monorepo for **Sports Venue Booking** (futsal / badminton courts, time-slot availability, conflict-free booking).
 
-> Scope checkpoint: this iteration only sets up **folder structure + best practices**.
-> Domain features (`Venue`, `Court`, `Schedule/Slot`, `Booking`, `Payment`) are intentionally NOT implemented yet.
+Backend is wired end-to-end (venues → courts → slots → bookings → payments + manager dashboard); frontend views are the next track.
 
 ## Stack
 
-- **Frontend:** Vue 3 + Vite + Pinia + Vue Router + Axios (`frontend/`)
-- **Backend:** FastAPI + Pydantic Settings + Pytest (`backend/`)
-- **Tooling:** npm, pip, Ruff, GitHub Actions, Make
+- **Frontend:** Vue 3 + Vite + Pinia + Vue Router + Axios + Tailwind CSS (`frontend/`)
+- **Backend:** FastAPI + SQLAlchemy + Alembic + PostgreSQL + Pytest (`backend/`)
+- **Payments:** DOKU sandbox + signed webhook (`docs/PAYMENTS.md`)
+- **Tooling:** uv, npm, Ruff, GitHub Actions, Make, Docker/Podman compose
 
 ## Layout
 
@@ -56,10 +56,10 @@ npm --prefix frontend run dev
 | `make frontend-build` | `vite build` |
 | `make test` | backend tests + frontend build |
 
-## Roles (planned)
+## Roles
 
-- **Customer:** books a court.
-- **Venue Manager:** manages courts, pricing, schedules.
+- **Customer:** books a court (open routes).
+- **Venue Manager:** manages courts, pricing, schedules (`X-Manager-Token`).
 
 ## Collaboration
 
