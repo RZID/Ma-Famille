@@ -12,7 +12,11 @@ Endpoints:
 - `GET /` — root info
 - `GET /api/v1/health` — liveness probe (no DB)
 - `GET /api/v1/health/db` — readiness probe (`SELECT 1`)
-- `GET /docs` — Swagger UI
+- `GET /docs` — Swagger UI (auto-generated OpenAPI)
+- `GET /redoc` — ReDoc
+- `GET /openapi.json` — raw OpenAPI spec
+
+Run `make backend-dev`, then open http://localhost:8000/docs.
 
 ## Database
 
