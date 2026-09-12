@@ -16,6 +16,12 @@ dependencies = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Filter below silences one DeprecationWarning raised by starlette itself at
+# import time (anyio alias); our code raises none. Re-check each dependency
+# upgrade and drop the filter once upstream migrates.
+filterwarnings = [
+  "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]
 
 [tool.ruff]
 line-length = 100
