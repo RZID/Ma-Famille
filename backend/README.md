@@ -10,16 +10,29 @@ uvicorn app.main:app --reload --app-dir . --port 8000
 Endpoints:
 
 - `GET /` — root info
-- `GET /api/v1/health` — liveness probe
+- `GET /api/v1/health` — liveness probe (no DB)
+- `GET /api/v1/health/db` — readiness probe (`SELECT 1`)
 - `GET /docs` — Swagger UI
+
+## Database
+
+PostgreSQL + SQLAlchemy 2.x + Alembic. See `docs/DATABASE.md`.
+
+```bash
+make db-up
+make db-upgrade
+```
 
 ## Layout
 
 ```text
 backend/
+  alembic.ini
+  alembic/          # env.py + versions/
   app/
     main.py          # app factory, CORS, router wiring
-    core/config.py   # pydantic-settings
+    core/config.py   # pydantic-settings (incl. DATABASE_URL)
+    db/              # Base, engine, SessionLocal, get_db
     api/v1/          # versioned routers (health + future domains)
     models/          # ORM / domain models (planned: Venue, Court, Slot, Booking, Payment)
     schemas/         # Pydantic schemas (planned)
