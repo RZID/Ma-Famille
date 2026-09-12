@@ -1,8 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.db.session import get_db
+from app.models.booking import Booking
 from app.schemas.payment import (
     DokuWebhookAck,
     PaymentCreate,
@@ -10,31 +14,54 @@ from app.schemas.payment import (
     PaymentResponse,
 )
 from app.services import doku
+from app.services import payments as payment_service
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 WEBHOOK_TARGET = "/api/v1/payments/webhook/doku"
 
-_TODO = "TODO: payment store not wired yet (DOKU checkout is live in sandbox)"
+
+def _to_response(db: Session, payment) -> PaymentResponse:
+    return PaymentResponse(
+        public_id=payment.public_id,
+        booking_public_id=payment_service.booking_public_id(db, payment),
+        amount=payment.amount,
+        kind=payment.kind,
+        status=payment.status,
+        created_at=payment.created_at,
+    )
 
 
 @router.post(
     "",
     summary="Create DOKU checkout (sandbox)",
     response_model=PaymentInitiateResponse,
-    responses={501: {"description": "DOKU keys missing or store not wired"}},
+    responses={501: {"description": "DOKU keys missing"}},
 )
-def create_payment(body: PaymentCreate) -> PaymentInitiateResponse:
+def create_payment(body: PaymentCreate, db: Session = Depends(get_db)):
+    booking = db.scalars(
+        select(Booking).where(Booking.public_id == body.booking_public_id)
+    ).first()
+    if booking is None:
+        raise HTTPException(status_code=404, detail="booking not found")
+    invoice_number = doku.new_invoice_number()
     try:
         result = doku.create_checkout(
-            invoice_number=doku.new_invoice_number(),
+            invoice_number=invoice_number,
             amount=body.amount,
-            customer_name="ma-famille customer",
+            customer_name=booking.customer_name,
         )
     except doku.DokuError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(exc)
         ) from exc
+    payment_service.create_payment(
+        db,
+        booking_id=booking.id,
+        amount=body.amount,
+        kind=body.kind,
+        invoice_number=invoice_number,
+    )
     return PaymentInitiateResponse(
         invoice_number=result.invoice_number,
         checkout_url=result.checkout_url,
@@ -42,16 +69,25 @@ def create_payment(body: PaymentCreate) -> PaymentInitiateResponse:
     )
 
 
-@router.get("", summary="TODO: list payments per booking")
-def list_payments(booking_public_id: UUID) -> list[PaymentResponse]:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_TODO)
+@router.get("", summary="List payments per booking")
+def list_payments(
+    booking_public_id: UUID, db: Session = Depends(get_db)
+) -> list[PaymentResponse]:
+    booking = db.scalars(
+        select(Booking).where(Booking.public_id == booking_public_id)
+    ).first()
+    if booking is None:
+        raise HTTPException(status_code=404, detail="booking not found")
+    payments = payment_service.list_by_booking_id(db, booking.id)
+    return [_to_response(db, p) for p in payments]
 
 
-@router.post("/{public_id}/mark-paid", summary="TODO: mark payment paid (manager)")
-def mark_paid(public_id: UUID) -> PaymentResponse:
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"{_TODO}: {public_id}"
-    )
+@router.post("/{public_id}/mark-paid", summary="Mark payment paid (manager)")
+def mark_paid(public_id: UUID, db: Session = Depends(get_db)) -> PaymentResponse:
+    payment = payment_service.get_by_public_id(db, public_id)
+    if payment is None:
+        raise HTTPException(status_code=404, detail="payment not found")
+    return _to_response(db, payment_service.mark_paid(db, payment))
 
 
 def _webhook_status(body: dict) -> tuple[str, str]:
@@ -79,7 +115,7 @@ def _webhook_status(body: dict) -> tuple[str, str]:
     response_model=DokuWebhookAck,
     responses={401: {"description": "Bad signature"}},
 )
-async def doku_webhook(request: Request) -> DokuWebhookAck:
+async def doku_webhook(request: Request, db: Session = Depends(get_db)):
     if not settings.doku_configured:
         raise HTTPException(status_code=501, detail="DOKU keys not configured")
     raw = await request.body()
@@ -100,4 +136,11 @@ async def doku_webhook(request: Request) -> DokuWebhookAck:
     except ValueError:
         raise HTTPException(status_code=422, detail="invalid JSON body")
     invoice, mapped = _webhook_status(body)
-    return DokuWebhookAck(invoice_number=invoice, payment_status=mapped)
+    payment = payment_service.get_by_invoice(db, invoice)
+    if payment is None:
+        raise HTTPException(status_code=404, detail="unknown invoice")
+    if mapped == "paid":
+        payment_service.mark_paid(db, payment)
+    return DokuWebhookAck(
+        invoice_number=invoice, payment_status=mapped, detail="matched"
+    )
