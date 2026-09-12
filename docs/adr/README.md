@@ -22,3 +22,4 @@ write the *why*, not just the *what*.
 | [0010](0010-github-actions-ci.md) | GitHub Actions CI with a PostgreSQL service | Accepted |
 | [0011](0011-uv-project-venv.md) | uv with a project-local venv for Python | Accepted |
 | [0012](0012-doku-sandbox-payments.md) | DOKU sandbox for third-party payments | Accepted |
+| [0013](0013-single-domain-subpath.md) | Single domain with subpath routing | Accepted |

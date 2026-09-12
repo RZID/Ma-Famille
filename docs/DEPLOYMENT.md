@@ -1,10 +1,26 @@
 # Deployment
 
+Final URLs (single domain, single origin):
+
 ```text
-browser ──HTTPS──▶ Cloudflare Pages (frontend, auto per push)
-browser ──HTTPS──▶ cloudflared tunnel ──▶ 127.0.0.1:8000 (backend api, home server)
-GitHub ──outbound only──▶ self-hosted runner (home server, no public IP needed)
+https://college.rzidinc.com/ma-famille            → frontend (nginx static)
+https://college.rzidinc.com/ma-famille/api/v1/…   → backend (FastAPI, ROOT_PATH=/ma-famille)
+https://college.rzidinc.com/ma-famille/docs       → Swagger UI
 ```
+
+Traffic:
+
+```text
+browser ──HTTPS──▶ cloudflared tunnel ──▶ 127.0.0.1:8080 (nginx web)
+                                              ├─ /ma-famille/     → static SPA
+                                              └─ /ma-famille/api/ → proxy to api:8000
+GitHub ──outbound only──▶ self-hosted runner (home server, no public IP needed)
+Cloudflare Pages ── previews per PR only (cannot mount at a subpath)
+```
+
+> Cloudflare Pages cannot serve at a subpath natively (custom domains are
+> full hostnames), so the final domain is served from the home server while
+> Pages stays as the free preview environment. See ADR 0013.
 
 ## One-time server setup
 
@@ -19,10 +35,18 @@ GitHub ──outbound only──▶ self-hosted runner (home server, no public I
    (repo → Settings → Actions → Runners → New self-hosted runner),
    labels must include `ma-famille`, and register it as a systemd service
    so it survives reboots.
-3. Clone the repo on the server once and create `backend/.env` there
-   (DATABASE_URL is overridden by compose; add DOKU keys, and set
-   `BACKEND_CORS_ORIGINS` to include the Pages URL, e.g.
-   `https://ma-famille.pages.dev`).
+3. Add the tunnel ingress (existing tunnel, one new line —
+   put specific paths before any catch-all):
+   ```yaml
+   ingress:
+     - hostname: college.rzidinc.com
+       path: /ma-famille/*
+       service: http://127.0.0.1:8080
+   ```
+4. Clone the repo on the server once and create `backend/.env` there
+   (DATABASE_URL is overridden by compose; set `DOKU_*` keys,
+   `ROOT_PATH=/ma-famille`, and `BACKEND_CORS_ORIGINS` to include
+   `https://college.rzidinc.com`).
 
 ## How a deploy flows
 
@@ -32,19 +56,18 @@ GitHub ──outbound only──▶ self-hosted runner (home server, no public I
    the api container runs `alembic upgrade head` on boot, then the
    workflow curls the local health gate before finishing.
 
-## Frontend (Cloudflare Pages)
+## Frontend
 
-Connect the repo in Pages with these settings — no workflow file needed:
+Two targets from the same `frontend/` source:
 
-| Setting | Value |
-|---|---|
-| Root directory | `frontend` |
-| Build command | `npm run build` |
-| Output directory | `dist` |
-| Env (Production) | `VITE_API_URL=https://api.<your-domain>` |
+| Target | How | Env |
+|---|---|---|
+| Final domain (served by `web` on the server) | built into the nginx image during deploy | `VITE_API_URL=https://college.rzidinc.com/ma-famille`, `VITE_BASE_PATH=/ma-famille/` (compose defaults) |
+| PR previews (Cloudflare Pages) | connect repo in Pages: root `frontend`, build `npm run build`, output `dist` | `VITE_API_URL=https://college.rzidinc.com/ma-famille`, no `VITE_BASE_PATH` (root) |
 
-Every PR gets a preview URL automatically. `public/_redirects` keeps
-vue-router history mode working on refresh (`/health` must not 404).
+`public/_redirects` covers SPA fallback on Pages; on the final domain
+nginx `try_files` does the same job, so `/ma-famille/health` never 404s
+on refresh.
 
 ## Rollback
 
