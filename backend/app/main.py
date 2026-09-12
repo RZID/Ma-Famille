@@ -21,6 +21,7 @@ OPENAPI_TAGS = [
         "description": "TODO: booking with conflict check, history, confirm/cancel.",
     },
     {"name": "payments", "description": "TODO: deposit/paid status (no gateway)."},
+    {"name": "manager", "description": "TODO: incoming bookings + occupancy chart."},
 ]
 
 
