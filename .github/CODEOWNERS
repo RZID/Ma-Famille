@@ -1,0 +1,25 @@
+# Replace @org/ma-famille-group-N with real GitHub teams when created.
+# Syntax: <path> <owners>
+
+backend/app/**/venue* @org/ma-famille-group-1
+frontend/src/stores/venues* @org/ma-famille-group-1
+
+backend/app/**/court* @org/ma-famille-group-2
+frontend/src/stores/courts* @org/ma-famille-group-2
+
+backend/app/**/slot* @org/ma-famille-group-3
+backend/app/services/ @org/ma-famille-group-3 @org/ma-famille-group-4
+
+backend/app/**/booking* @org/ma-famille-group-4
+
+backend/app/**/payment* @org/ma-famille-group-5
+
+docs/ @org/ma-famille-group-6
+.github/ @org/ma-famille-group-6
+Makefile @org/ma-famille-group-6
+
+# Shared composition roots — require cross-group review
+backend/app/api/v1/router.py @org/ma-famille-group-6
+backend/app/main.py @org/ma-famille-group-6
+frontend/src/router/ @org/ma-famille-group-6
+frontend/src/App.vue @org/ma-famille-group-6

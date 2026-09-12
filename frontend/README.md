@@ -1,5 +1,32 @@
-# Vue 3 + Vite
+# ma-famille frontend (Vue 3 + Vite + Pinia)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Foundation iteration: router + Pinia + axios client + health views.
+No domain CRUD yet (Venue/Court/Slot/Booking/Payment come next).
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Dev
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # production build to dist/
+```
+
+Env: copy `.env.example` to `.env`, set `VITE_API_URL` (default `http://localhost:8000`).
+
+## Layout
+
+```text
+src/
+  router/index.js     # /, /health
+  services/api.js     # single axios instance + fetchHealth/fetchRoot
+  stores/app.js       # backend connectivity state
+  views/              # HomeView, HealthView
+  components/         # AppNav, HealthStatus
+  App.vue main.js
+```
+
+Rules:
+
+- HTTP only via `services/api.js`.
+- Server state in Pinia stores, one file per domain (`venues.js`, `bookings.js`, … next).
+- Views are thin; reusable UI goes to `components/`.
