@@ -8,6 +8,22 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mafamille
+          POSTGRES_PASSWORD: mafamille
+          POSTGRES_DB: mafamille
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+psycopg://mafamille:mafamille@localhost:5432/mafamille
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,6 +35,9 @@ jobs:
         run: pip install -r backend/requirements-dev.txt
       - name: Lint
         run: ruff check backend
+      - name: Migrate
+        run: alembic upgrade head
+        working-directory: backend
       - name: Test
         run: pytest backend/tests -v
 
