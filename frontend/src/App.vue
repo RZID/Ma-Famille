@@ -3,26 +3,13 @@ import AppNav from './components/AppNav.vue'
 </script>
 
 <template>
-  <AppNav />
-  <main class="container">
-    <RouterView />
-  </main>
-  <footer class="footer">
-    <small>ma-famille · Sports Venue Booking · foundation iteration</small>
-  </footer>
+  <div class="flex min-h-screen flex-col bg-white text-gray-900">
+    <AppNav />
+    <main class="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
+      <RouterView />
+    </main>
+    <footer class="border-t border-gray-200 py-4 text-center text-sm text-gray-500">
+      ma-famille · Sports Venue Booking · foundation iteration
+    </footer>
+  </div>
 </template>
-
-<style scoped>
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px;
-  min-height: 70vh;
-}
-.footer {
-  text-align: center;
-  padding: 16px;
-  color: #6b7280;
-  border-top: 1px solid #e5e7eb;
-}
-</style>

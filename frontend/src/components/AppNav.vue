@@ -5,9 +5,9 @@ import { useAppStore } from '../stores/app.js'
 const store = useAppStore()
 
 const dotClass = computed(() => {
-  if (store.backendStatus === 'ok') return 'dot ok'
-  if (store.backendStatus === 'unknown') return 'dot idle'
-  return 'dot bad'
+  if (store.backendStatus === 'ok') return 'bg-green-600'
+  if (store.backendStatus === 'unknown') return 'bg-gray-400'
+  return 'bg-red-600'
 })
 
 onMounted(() => {
@@ -16,52 +16,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="nav">
-    <RouterLink to="/" class="brand">ma-famille</RouterLink>
-    <nav class="links">
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/health">Health</RouterLink>
+  <header class="flex items-center gap-4 border-b border-gray-200 px-4 py-3">
+    <RouterLink to="/" class="font-bold text-gray-900 no-underline">ma-famille</RouterLink>
+    <nav class="flex flex-1 gap-3">
+      <RouterLink to="/" class="text-gray-600 no-underline hover:text-gray-900" active-class="font-semibold text-gray-900!">Home</RouterLink>
+      <RouterLink to="/health" class="text-gray-600 no-underline hover:text-gray-900" active-class="font-semibold text-gray-900!">Health</RouterLink>
     </nav>
-    <span :class="dotClass" :title="`backend: ${store.backendStatus}`" />
+    <span :class="['h-2.5 w-2.5 rounded-full', dotClass]" :title="`backend: ${store.backendStatus}`" />
   </header>
 </template>
-
-<style scoped>
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.brand {
-  font-weight: 700;
-  text-decoration: none;
-  color: inherit;
-}
-.links {
-  display: flex;
-  gap: 12px;
-  flex: 1;
-}
-.links a {
-  text-decoration: none;
-  color: #374151;
-}
-.links a.router-link-active {
-  font-weight: 600;
-  color: #111827;
-}
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #9ca3af;
-}
-.dot.ok {
-  background: #16a34a;
-}
-.dot.bad {
-  background: #dc2626;
-}
-</style>
