@@ -45,15 +45,20 @@ def test_health_db_ok_with_override():
 
 def test_health_db_503_when_unreachable():
     from fastapi.testclient import TestClient
+    from sqlalchemy.exc import OperationalError
+
+    class BrokenSession:
+        def execute(self, *args, **kwargs):
+            raise OperationalError("SELECT 1", {}, Exception("down"))
 
     def override_get_db_broken():
-        raise RuntimeError("boom")
-        yield None
+        yield BrokenSession()
 
     app.dependency_overrides[get_db] = override_get_db_broken
     try:
         client = TestClient(app)
         res = client.get("/api/v1/health/db")
-        assert res.status_code in (500, 503)
+        assert res.status_code == 503
+        assert res.json()["detail"] == "database unreachable"
     finally:
         app.dependency_overrides.pop(get_db, None)
