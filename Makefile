@@ -1,4 +1,4 @@
-.PHONY: help backend-venv backend-install backend-dev backend-test backend-lint db-up db-down db-logs db-migrate db-upgrade db-downgrade frontend-install frontend-dev frontend-build test
+.PHONY: help backend-venv backend-install backend-dev backend-test backend-lint db-up db-down db-logs db-migrate db-upgrade db-downgrade db-seed frontend-install frontend-dev frontend-build test
 
 # Python env: all backend targets run inside .venv (no global pip needed).
 # `make backend-install` creates it (via uv if present) and installs deps.
@@ -29,6 +29,7 @@ help:
 	@echo "  make db-migrate m=\"msg\"  create Alembic revision (autogenerate)"
 	@echo "  make db-upgrade        apply migrations (alembic upgrade head)"
 	@echo "  make db-downgrade      rollback one migration"
+	@echo "  make db-seed            insert demo data (needs migrated db)"
 	@echo "  make frontend-install  install frontend deps (npm)"
 	@echo "  make frontend-dev      run Vite dev server"
 	@echo "  make frontend-build    build frontend"
@@ -66,6 +67,9 @@ db-upgrade:
 
 db-downgrade:
 	cd backend && $(PY) -m alembic downgrade -1
+
+db-seed:
+	cd backend && $(PY) -m app.db.seed
 
 frontend-install:
 	npm --prefix frontend install
