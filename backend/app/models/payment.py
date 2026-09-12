@@ -17,3 +17,6 @@ class Payment(Base, PKMixin, PublicIdMixin, TimestampMixin):
     amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="deposit")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="unpaid")
+    invoice_number: Mapped[str | None] = mapped_column(
+        String(60), nullable=True, unique=True
+    )
