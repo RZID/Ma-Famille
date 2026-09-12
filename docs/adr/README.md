@@ -21,3 +21,4 @@ write the *why*, not just the *what*.
 | [0009](0009-compose-podman-support.md) | Compose file supporting Docker and Podman | Accepted |
 | [0010](0010-github-actions-ci.md) | GitHub Actions CI with a PostgreSQL service | Accepted |
 | [0011](0011-uv-project-venv.md) | uv with a project-local venv for Python | Accepted |
+| [0012](0012-doku-sandbox-payments.md) | DOKU sandbox for third-party payments | Accepted |
