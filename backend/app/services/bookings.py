@@ -9,9 +9,8 @@ from app.models.slot import Slot
 from app.schemas.booking import BookingCreate
 
 
-def _slot_id(db: Session, slot_public_id: UUID) -> int | None:
-    slot = db.scalars(select(Slot).where(Slot.public_id == slot_public_id)).first()
-    return slot.id if slot else None
+class SlotUnavailable(RuntimeError):
+    pass
 
 
 def get_by_public_id(db: Session, public_id: UUID) -> Booking | None:
@@ -29,14 +28,17 @@ def list_by_contact(db: Session, customer_contact: str) -> list[Booking]:
 
 def create_booking(db: Session, data: BookingCreate) -> Booking | None:
     """Returns None when the slot is unknown; raises IntegrityError on conflict."""
-    slot_id = _slot_id(db, data.slot_public_id)
-    if slot_id is None:
+    slot = db.scalars(select(Slot).where(Slot.public_id == data.slot_public_id)).first()
+    if slot is None:
         return None
+    if slot.status != "available":
+        raise SlotUnavailable(f"slot is {slot.status}")
     booking = Booking(
-        slot_id=slot_id,
+        slot_id=slot.id,
         customer_name=data.customer_name,
         customer_contact=data.customer_contact,
     )
+    slot.status = "booked"
     db.add(booking)
     try:
         db.commit()
@@ -58,6 +60,9 @@ def confirm_booking(db: Session, booking: Booking) -> Booking | None:
 
 def cancel_booking(db: Session, booking: Booking) -> Booking:
     booking.status = "cancelled"
+    slot = db.get(Slot, booking.slot_id)
+    if slot is not None and slot.status == "booked":
+        slot.status = "available"
     db.commit()
     db.refresh(booking)
     return booking

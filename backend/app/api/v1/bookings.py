@@ -33,6 +33,8 @@ def create_booking(body: BookingCreate, db: Session = Depends(get_db)) -> Bookin
         booking = booking_service.create_booking(db, body)
     except IntegrityError:
         raise HTTPException(status_code=409, detail="slot already booked")
+    except booking_service.SlotUnavailable as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     if booking is None:
         raise HTTPException(status_code=404, detail="slot not found")
     return _to_response(db, booking)

@@ -68,6 +68,9 @@ def test_booking_flow_with_conflict():
         assert first.json()["status"] == "pending"
         public_id = first.json()["public_id"]
 
+        slot_state = client.get(f"/api/v1/slots/{slot_id}")
+        assert slot_state.json()["status"] == "booked"
+
         second = client.post(
             "/api/v1/bookings",
             json={
@@ -77,7 +80,7 @@ def test_booking_flow_with_conflict():
             },
         )
         assert second.status_code == 409
-        assert second.json()["detail"] == "slot already booked"
+        assert second.json()["detail"] == "slot is booked"
 
         history = client.get("/api/v1/bookings", params={"customer_contact": "0812"})
         assert len(history.json()) == 1
@@ -87,6 +90,9 @@ def test_booking_flow_with_conflict():
 
         cancelled = client.post(f"/api/v1/bookings/{public_id}/cancel")
         assert cancelled.json()["status"] == "cancelled"
+
+        freed = client.get(f"/api/v1/slots/{slot_id}")
+        assert freed.json()["status"] == "available"
     finally:
         app.dependency_overrides.pop(get_db, None)
 
