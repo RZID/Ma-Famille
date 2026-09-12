@@ -18,8 +18,22 @@ services:
       - backend/.env
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mafamille}:${POSTGRES_PASSWORD:-mafamille}@db:5432/${POSTGRES_DB:-mafamille}
+      ROOT_PATH: /ma-famille
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://college.rzidinc.com/ma-famille}
+        VITE_BASE_PATH: /ma-famille/
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - api
