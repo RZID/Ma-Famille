@@ -21,3 +21,9 @@ class PaymentResponse(BaseModel):
     kind: PaymentKind
     status: PaymentStatus
     created_at: datetime
+
+
+class PaymentInitiateResponse(BaseModel):
+    invoice_number: str
+    checkout_url: str
+    token_id: str = ""
