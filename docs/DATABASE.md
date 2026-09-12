@@ -12,6 +12,23 @@ Override via `backend/.env` (see `backend/.env.example`). Tests override `get_db
 with in-memory SQLite, so `pytest` needs no live DB — but CI also runs
 `alembic upgrade head` against real PostgreSQL 16.
 
+## Identifiers
+
+Two ids per row (see `app/db/base.py`):
+
+| Column | Type | Scope |
+|---|---|---|
+| `id` | `BigInteger` PK, autoincrement | system-level: FKs, joins, migrations |
+| `public_id` | UUIDv7, unique + indexed, `default=uuid7` | client-side: URLs, payloads |
+
+Why UUIDv7 over random v4 GUIDs: v7 embeds a millisecond timestamp, so values
+are roughly time-ordered — better B-tree locality and sortable by creation —
+while the 74 random bits keep ids unguessable. Integer PKs stay internal so
+resharding/merge logic never leaks into the client contract.
+
+Mixins: `PKMixin`, `PublicIdMixin`, `TimestampMixin`. Domain models compose
+all three. Generator lives in `app/core/ids.py` (stdlib only).
+
 ## Local dev
 
 ```bash

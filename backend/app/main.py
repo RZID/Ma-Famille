@@ -7,8 +7,8 @@ from app.schemas.health import RootResponse
 
 DESCRIPTION = """Sports Venue Booking API (futsal / badminton courts).
 
-Foundation iteration: health probes only. Domain routers
-(Venue, Court, Slot, Booking, Payment) land in follow-up iterations.
+Domain routes (Venue, Court, Slot, Booking, Payment, Manager) exist as TODO
+stubs returning 501 — Swagger-first, store logic lands per group next.
 """
 
 OPENAPI_TAGS = [
