@@ -10,11 +10,11 @@ The final URLs must live on one domain: the SPA at
 `college.rzidinc.com/ma-famille` and the API at
 `college.rzidinc.com/ma-famille/api/<version>/...`. The frontend source is
 shared between the final domain and Cloudflare Pages previews, and the
-backend runs on a home server behind a Cloudflare Tunnel.
+backend runs on a prod server behind a Cloudflare Tunnel.
 
 ## Decision
 
-Serve both from one nginx origin on the home server: static SPA at
+Serve both from one nginx origin on the prod server: static SPA at
 `/ma-famille/` (with SPA fallback) and a prefix-preserving proxy at
 `/ma-famille/api/` to FastAPI with `ROOT_PATH=/ma-famille`. Cloudflare
 Pages stays as the preview environment only.

@@ -1,6 +1,6 @@
 name: cd
 
-# Backend deploys to the home server. The runner lives ON that server and
+# Backend deploys to the prod server. The runner lives ON that server and
 # only makes outbound connections, so no public IP or open port is needed.
 # Frontend ships via Cloudflare Pages' own GitHub integration (see docs/DEPLOYMENT.md).
 

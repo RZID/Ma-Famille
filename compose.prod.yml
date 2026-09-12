@@ -1,4 +1,4 @@
-# Production overlay for the home server. Dev keeps using docker-compose.yml.
+# Production overlay for the prod server. Dev keeps using docker-compose.yml.
 # Usage on the server: docker compose -f docker-compose.yml -f compose.prod.yml up -d --build
 #
 # The API binds to 127.0.0.1 only — it is exposed publicly through the

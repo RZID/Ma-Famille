@@ -14,45 +14,39 @@ Traffic:
 browser ──HTTPS──▶ cloudflared tunnel ──▶ 127.0.0.1:8080 (nginx web)
                                               ├─ /ma-famille/     → static SPA
                                               └─ /ma-famille/api/ → proxy to api:8000
-GitHub ──outbound only──▶ self-hosted runner (home server, no public IP needed)
+GitHub ──outbound only──▶ self-hosted runner (prod server, no public IP needed)
 Cloudflare Pages ── previews per PR only (cannot mount at a subpath)
 ```
 
 > Cloudflare Pages cannot serve at a subpath natively (custom domains are
-> full hostnames), so the final domain is served from the home server while
+> full hostnames), so the final domain is served from the prod server while
 > Pages stays as the free preview environment. See ADR 0013.
 
 ## One-time server setup
 
-1. Install Docker (or Podman) and `cloudflared`; the tunnel itself is
-   unchanged, just add one ingress line:
-   ```yaml
-   ingress:
-     - hostname: api.<your-domain>
-       service: http://127.0.0.1:8000
-   ```
-2. Install the GitHub Actions runner
+On the server, run the checker first — it reports what is missing without
+changing anything:
+
+```bash
+bash scripts/bootstrap-server.sh
+```
+
+1. Install Docker (or Podman) and `cloudflared` until the checker is happy.
+2. Merge `tunnel/config.example.yml` into the existing tunnel config
+   (specific paths before any catch-all), then restart cloudflared.
+3. Install the GitHub Actions runner
    (repo → Settings → Actions → Runners → New self-hosted runner),
    labels must include `ma-famille`, and register it as a systemd service
    so it survives reboots.
-3. Add the tunnel ingress (existing tunnel, one new line —
-   put specific paths before any catch-all):
-   ```yaml
-   ingress:
-     - hostname: college.rzidinc.com
-       path: /ma-famille/*
-       service: http://127.0.0.1:8080
-   ```
-4. Clone the repo on the server once and create `backend/.env` there
-   (DATABASE_URL is overridden by compose; set `DOKU_*` keys,
-   `ROOT_PATH=/ma-famille`, and `BACKEND_CORS_ORIGINS` to include
-   `https://college.rzidinc.com`).
+4. Clone the repo to `~/ma-famille` and create `backend/.env` from
+   `backend/.env.prod.example` (fill `POSTGRES_PASSWORD`,
+   `MANAGER_TOKEN`, DOKU keys).
 
 ## How a deploy flows
 
 1. Push to `main` → `ci` runs (lint, migrate, pytest, vite build).
 2. On CI success, `cd` fires automatically (`workflow_dispatch` forces one
-   manually): the home-server runner rebuilds `compose.prod.yml`,
+   manually): the prod-server runner rebuilds `compose.prod.yml`,
    the api container runs `alembic upgrade head` on boot, then the
    workflow curls the local health gate before finishing.
 
