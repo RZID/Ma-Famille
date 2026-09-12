@@ -20,6 +20,7 @@ OPENAPI_TAGS = [
         "name": "bookings",
         "description": "TODO: booking with conflict check, history, confirm/cancel.",
     },
+    {"name": "payments", "description": "TODO: deposit/paid status (no gateway)."},
 ]
 
 
