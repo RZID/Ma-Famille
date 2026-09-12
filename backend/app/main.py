@@ -14,6 +14,7 @@ Foundation iteration: health probes only. Domain routers
 OPENAPI_TAGS = [
     {"name": "health", "description": "Liveness and readiness probes."},
     {"name": "venues", "description": "TODO: venue CRUD (manager) + public list."},
+    {"name": "courts", "description": "TODO: courts with weekday/weekend rates."},
 ]
 
 
