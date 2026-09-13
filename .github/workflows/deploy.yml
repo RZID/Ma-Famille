@@ -61,10 +61,17 @@ jobs:
           ssh prod "APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
           set -e
           fail() { echo "PREFLIGHT FAIL: $1" >&2; exit 1; }
+          missing=""
+          need() { command -v "$1" >/dev/null || missing="$missing $1($2)"; }
           command -v podman >/dev/null || fail "podman not installed"
           (podman compose version >/dev/null 2>&1 || command -v podman-compose >/dev/null) || fail "no compose (install podman compose plugin or podman-compose)"
           [ -e /sys/fs/cgroup/cgroup.controllers ] || fail "cgroup v2 unavailable — on Alpine: doas rc-update add cgroups boot && reboot"
-          command -v curl >/dev/null || command -v wget >/dev/null || fail "need curl or wget (for health gate)"
+          need newuidmap shadow
+          need fuse-overlayfs fuse-overlayfs
+          need buildah buildah
+          need iptables iptables
+          { command -v curl >/dev/null || command -v wget >/dev/null; } || missing="$missing curl-or-wget(curl)"
+          [ -z "$missing" ] || fail "missing binaries:$missing — one shot: doas apk add shadow fuse-overlayfs buildah iptables curl"
           [ -f "$APP_DIR/backend/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/backend/.env missing — create it from backend/.env.prod.example"
           [ -f "$APP_DIR/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/.env missing (POSTGRES_*/VITE_API_URL for compose)"
           echo "PREFLIGHT OK"
