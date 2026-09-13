@@ -102,24 +102,14 @@ Then register in GitHub (repo → Settings → Secrets and variables → Actions
 And in Cloudflare Zero Trust: protect `be-ssh.rzidinc.com` with an
 Access app whose only rule allows that service token.
 
-## Frontend (Cloudflare Pages + Worker, deployed by CI)
+## Frontend
 
-Final URL: `https://college.rzidinc.com/ma-famille` (subpath). How it hangs
-together:
+Production FE is served by the edge static server on the VM
+(`~/edge-dist/ma-famille`, delivered by the `deploy` workflow on every
+push). Cloudflare Pages (`ma-famille` project) is previews only:
+`web` workflow builds root-base and deploys on every `frontend/**` push.
 
-- `web` workflow builds twice: root build -> project `ma-famille`
-  (previews, `*.pages.dev`), prefixed build (`VITE_BASE_PATH=/ma-famille/`)
-  -> project `ma-famille-path` (never visited directly).
-- `workers/router.js` (project `ma-famille-router`, route
-  `college.rzidinc.com/ma-famille*`) strips the prefix and fetches the
-  prefixed build. No HTML rewriting: assets and router base already carry
-  the prefix from the build.
-- `VITE_API_URL` comes from the `VITE_API_URL` repo variable (default:
-  `https://college-api.rzidinc.com/ma-famille`).
-
-One-time setup: create the **two** Pages projects (`ma-famille`,
-`ma-famille-path`) in the dashboard. Needs two secrets:
-`CLOUDFLARE_API_TOKEN` (**Pages:Edit + Workers Scripts:Edit**) and
+Needs two secrets: `CLOUDFLARE_API_TOKEN` (Pages:Edit) and
 `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Rollback
