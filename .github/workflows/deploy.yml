@@ -1,0 +1,72 @@
+name: deploy
+
+# Backend only (frontend ships via Cloudflare Pages). GitHub-hosted runners
+# deliver to the prod server over SSH through the Cloudflare Tunnel —
+# no self-hosted runner, no public IP. See docs/DEPLOYMENT.md.
+#
+# Required secrets: SSH_PRIVATE_KEY, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET
+# Optional vars: DEPLOY_HOST (default be-ssh.rzidinc.com),
+#   DEPLOY_USER (default deploy), DEPLOY_APP_DIR (default /home/deploy/ma-famille)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "frontend/**"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST || 'be-ssh.rzidinc.com' }}
+  DEPLOY_USER: ${{ vars.DEPLOY_USER || 'deploy' }}
+  DEPLOY_APP_DIR: ${{ vars.DEPLOY_APP_DIR || '/home/deploy/ma-famille' }}
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cloudflared
+        run: |
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cloudflared.deb
+          sudo dpkg -i /tmp/cloudflared.deb
+
+      - name: Write SSH config
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '#!/bin/sh\nexec cloudflared access ssh --hostname "$0" --service-token-id "$TUNNEL_SERVICE_TOKEN_ID" --service-token-secret "$TUNNEL_SERVICE_TOKEN_SECRET"\n' > ~/cfssh
+          chmod +x ~/cfssh
+          printf 'Host prod\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy\n  StrictHostKeyChecking accept-new\n  ProxyCommand ~/cfssh %%h\n' "$DEPLOY_HOST" "$DEPLOY_USER" > ~/.ssh/config
+
+      - name: Deploy on prod server
+        run: |
+          ssh prod <<EOF
+          set -e
+          cd "$DEPLOY_APP_DIR"
+          git pull --ff-only
+          podman compose -f docker-compose.yml -f compose.prod.yml up -d --build
+          for i in \$(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
+              echo "prod web healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "prod stack never became healthy" >&2
+          podman compose -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
+          exit 1
+          EOF
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+
+      - name: Prune old images
+        run: ssh prod 'podman image prune -f'
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}

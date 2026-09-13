@@ -14,7 +14,7 @@ Traffic:
 browser ──HTTPS──▶ cloudflared tunnel (LXC) ──LAN──▶ 192.168.1.50:8080 (nginx web, backend VM)
                                                         ├─ /ma-famille/     → static SPA
                                                         └─ /ma-famille/api/ → proxy to api:8000
-GitHub runner ──SSH over tunnel──▶ ssh.college.rzidinc.com ──LAN──▶ backend VM:22 (scp tarball + compose up)
+GitHub runner ──SSH over tunnel──▶ be-ssh.rzidinc.com ──LAN──▶ backend VM:22 (git pull + compose up)
 Cloudflare Pages ── previews per PR only (cannot mount at a subpath)
 ```
 
@@ -71,35 +71,43 @@ and run one real sandbox payment (see `docs/PAYMENTS.md`).
 
 ## How a deploy flows
 
-1. Push to `main` → `ci` runs (lint, migrate, pytest, vite build).
-2. On CI success, `cd` fires automatically (`workflow_dispatch` forces one
-   manually): GitHub packs the tree, `scp`s it through the tunnel, and
-   `ssh`es the prod server to rebuild `compose.prod.yml` (migrations run
+1. Push to `main` (backend paths) → `ci` runs (lint, migrate, pytest).
+2. The same push triggers `deploy`: GitHub installs cloudflared, opens SSH
+   through the tunnel with the service token, then on the prod server runs
+   `git pull --ff-only` + `podman compose up -d --build` (migrations run
    inside the api container on boot), then gates on the public `/ma-famille`
-   health path before finishing.
+   health path before finishing. `workflow_dispatch` forces one manually.
 
 ## One-time access setup (instead of a runner)
 
-On the backend VM, create a deploy user/key (no passphrase):
+On the backend VM, the `deploy` user needs GitHub read access (for
+`git pull`) plus the SSH key GitHub will present:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/deploy -N ""
-cat ~/.ssh/deploy.pub >> ~/.ssh/authorized_keys
+# as user deploy on the VM
+ssh-keygen -t ed25519 -f ~/.ssh/github -N ""   # read-only repo access
+gh repo deploy-key add ~/.ssh/github.pub --repo RZID/Ma-Famille --allow-write=false
 ```
 
 Then register in GitHub (repo → Settings → Secrets and variables → Actions):
 
 | Secret / variable | Value |
 |---|---|
-| `DEPLOY_SSH_KEY` (secret) | contents of `~/.ssh/deploy` (private part) |
+| `SSH_PRIVATE_KEY` (secret) | key whose pubkey is in the VM's `~/.ssh/authorized_keys` |
 | `CF_ACCESS_CLIENT_ID` (secret) | Zero Trust service token ID |
 | `CF_ACCESS_CLIENT_SECRET` (secret) | Zero Trust service token secret |
-| `DEPLOY_SSH_HOST` (variable) | `ssh.college.rzidinc.com` |
-| `DEPLOY_SSH_USER` (variable) | VM username holding the public key |
-| `DEPLOY_APP_DIR` (variable) | checkout path on the VM, e.g. `/home/rzidinc/ma-famille` |
+| `DEPLOY_HOST` (secret) | `be-ssh.rzidinc.com` |
+| `DEPLOY_USER` (variable, default `deploy`) | VM username |
+| `DEPLOY_APP_DIR` (variable, default `/home/deploy/ma-famille`) | checkout path on the VM |
 
-And in Cloudflare Zero Trust: protect `ssh.college.rzidinc.com` with an
+And in Cloudflare Zero Trust: protect `be-ssh.rzidinc.com` with an
 Access app whose only rule allows that service token.
+
+First checkout on the VM (once, so `git pull` has something to update):
+
+```bash
+git clone git@github.com:RZID/Ma-Famille.git /home/deploy/ma-famille
+```
 
 ## Frontend
 

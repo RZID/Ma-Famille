@@ -54,5 +54,5 @@ for port in 8080 8000; do
 done
 
 echo "== 6. deploy access =="
-warn "no runner needed. Instead: ssh-keygen deploy key, add pubkey here (~/.ssh/authorized_keys), store private part as DEPLOY_SSH_KEY secret (see docs/DEPLOYMENT.md)"
+warn "no runner needed. Instead: SSH keypair ready here, private part stored as SSH_PRIVATE_KEY secret (see docs/DEPLOYMENT.md)"
 echo "done."
