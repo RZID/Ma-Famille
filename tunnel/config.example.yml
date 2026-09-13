@@ -6,8 +6,8 @@
 # Add exactly these two rows (Service hosts are backend-VM LAN IPs):
 #
 #   be-ssh.rzidinc.com      →  ssh://10.10.0.30:22
-#   college.rzidinc.com
-#     path /ma-famille/*    →  http://10.10.0.30:8080
+#   college-api.rzidinc.com
+#     path /ma-famille/*    →  http://10.10.0.30:8000
 #
 # Protect be-ssh.rzidinc.com with a Zero Trust Access app so only the
 # deploy service token can open SSH (Dashboard → Access → Applications).

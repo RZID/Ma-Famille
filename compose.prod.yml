@@ -1,7 +1,7 @@
 # Production overlay for the prod server. Dev keeps using docker-compose.yml.
 # Usage on the server: docker compose -f docker-compose.yml -f compose.prod.yml up -d --build
 #
-# The database lives on a SEPARATE VM, so this stack starts api + web only.
+# The database lives on a SEPARATE VM, so this stack starts api only.
 # DATABASE_URL comes from backend/.env (see backend/.env.prod.example).
 # Need a local DB instead? Start the base file's db with:
 #   docker compose -f docker-compose.yml -f compose.prod.yml --profile localdb up -d db
@@ -26,16 +26,3 @@ services:
       ROOT_PATH: /ma-famille
     ports:
       - "127.0.0.1:8000:8000"
-
-  web:
-    build:
-      context: .
-      dockerfile: web/Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-https://college.rzidinc.com/ma-famille}
-        VITE_BASE_PATH: /ma-famille/
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8080"
-    depends_on:
-      - api
