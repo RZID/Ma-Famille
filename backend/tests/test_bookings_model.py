@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
@@ -65,3 +65,23 @@ def test_cancelled_booking_frees_the_slot():
     db.commit()
     db.add(Booking(slot_id=slot.id, customer_name="B", customer_contact="082"))
     db.commit()
+
+
+def test_stale_pending_booking_expires_and_frees_slot():
+    from app.services.bookings import expire_stale_bookings
+
+    db = _session()
+    slot = _slot(db)
+    booking = Booking(slot_id=slot.id, customer_name="A", customer_contact="081")
+    db.add(booking)
+    db.commit()
+    booking.created_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=2)
+    slot.status = "booked"
+    db.commit()
+
+    assert expire_stale_bookings(db, ttl_minutes=30) == 1
+    db.refresh(booking)
+    db.refresh(slot)
+    assert booking.status == "cancelled"
+    assert slot.status == "available"
+    assert expire_stale_bookings(db, ttl_minutes=30) == 0

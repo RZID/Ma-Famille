@@ -4,9 +4,11 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.court import Court
 from app.models.slot import Slot
 from app.schemas.slot import SlotCreate, SlotUpdate
+from app.services import bookings as booking_service
 
 
 def _court_id(db: Session, court_public_id: UUID) -> int | None:
@@ -18,6 +20,7 @@ def list_slots(db: Session, court_public_id: UUID, day: date) -> list[Slot] | No
     court_id = _court_id(db, court_public_id)
     if court_id is None:
         return None
+    booking_service.expire_stale_bookings(db, settings.booking_ttl_minutes)
     start = datetime.combine(day, time.min)
     end = datetime.combine(day, time.max)
     stmt = (

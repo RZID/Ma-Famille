@@ -1,9 +1,11 @@
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.booking import Booking
 from app.models.slot import Slot
 from app.schemas.booking import BookingCreate
@@ -11,6 +13,30 @@ from app.schemas.booking import BookingCreate
 
 class SlotUnavailable(RuntimeError):
     pass
+
+
+def expire_stale_bookings(db: Session, ttl_minutes: int) -> int:
+    """Cancel pending bookings older than TTL and free their slots.
+
+    Runs lazily inside read/write paths (no cron needed). Compares in
+    Python so SQLite and Postgres timestamp flavors both behave.
+    """
+    now = datetime.now(UTC).replace(tzinfo=None)
+    stale = db.scalars(select(Booking).where(Booking.status == "pending")).all()
+    expired = 0
+    for booking in stale:
+        created = booking.created_at
+        if created.tzinfo is not None:
+            created = created.replace(tzinfo=None)
+        if now - created > timedelta(minutes=ttl_minutes):
+            booking.status = "cancelled"
+            slot = db.get(Slot, booking.slot_id)
+            if slot is not None and slot.status == "booked":
+                slot.status = "available"
+            expired += 1
+    if expired:
+        db.commit()
+    return expired
 
 
 def get_by_public_id(db: Session, public_id: UUID) -> Booking | None:
@@ -31,6 +57,8 @@ def create_booking(db: Session, data: BookingCreate) -> Booking | None:
     slot = db.scalars(select(Slot).where(Slot.public_id == data.slot_public_id)).first()
     if slot is None:
         return None
+    expire_stale_bookings(db, settings.booking_ttl_minutes)
+    db.refresh(slot)
     if slot.status != "available":
         raise SlotUnavailable(f"slot is {slot.status}")
     booking = Booking(
