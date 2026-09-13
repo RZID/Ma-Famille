@@ -11,8 +11,8 @@ credentials-file: /root/.cloudflared/<tunnel-id>.json
 ingress:
   - hostname: college.rzidinc.com
     path: /ma-famille/*
-    service: http://192.168.1.50:8080 # <-- LAN IP of the backend VM
+    service: http://10.10.0.30:8080 # <-- LAN IP of the backend VM
   - hostname: be-ssh.rzidinc.com
-    service: ssh://192.168.1.50:22 # <-- same VM, deploy traffic only
+    service: ssh://10.10.0.30:22 # <-- same VM, deploy traffic only
   # ... existing rules for the rest of college.rzidinc.com ...
   - service: http_status:404
