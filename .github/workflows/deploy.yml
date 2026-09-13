@@ -47,6 +47,18 @@ jobs:
         run: |
           ssh prod <<EOF
           set -e
+          if ! command -v git >/dev/null; then
+            if command -v apt-get >/dev/null; then
+              sudo apt-get update -qq && sudo apt-get install -y -qq git
+            elif command -v apk >/dev/null; then
+              sudo apk add --no-cache git
+            elif command -v dnf >/dev/null; then
+              sudo dnf install -y -q git
+            else
+              echo "git missing and no known package manager" >&2
+              exit 1
+            fi
+          fi
           if [ -d "$DEPLOY_APP_DIR/.git" ]; then
             cd "$DEPLOY_APP_DIR"
             git pull --ff-only
