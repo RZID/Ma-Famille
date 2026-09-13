@@ -3,7 +3,7 @@
 Final URLs:
 
 ```text
-https://college-api.rzidinc.com/ma-famille/api/v1/…   → backend (FastAPI, ROOT_PATH=/ma-famille)
+https://college-api.rzidinc.com/ma-famille/v1/…   → backend (FastAPI, ROOT_PATH=/ma-famille)
 https://college-api.rzidinc.com/ma-famille/docs       → Swagger UI
 (frontend lives on Cloudflare Pages under its own hostname)
 ```
@@ -61,11 +61,11 @@ After the first green `deploy` run, on the server:
 
 ```bash
 podman compose -f docker-compose.yml -f compose.prod.yml exec api python -m app.db.seed
-curl http://127.0.0.1:8000/ma-famille/api/v1/health/db
+curl http://127.0.0.1:8000/ma-famille/v1/health/db
 ```
 
 Then set the DOKU sandbox Notification URL to
-`https://college-api.rzidinc.com/ma-famille/api/v1/payments/webhook/doku`
+`https://college-api.rzidinc.com/ma-famille/v1/payments/webhook/doku`
 and run one real sandbox payment (see `docs/PAYMENTS.md`).
 
 ## How a deploy flows

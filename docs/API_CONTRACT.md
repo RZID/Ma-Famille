@@ -1,6 +1,6 @@
 # API Contract (live — browse it at `GET /docs`)
 
-Base: `/api/v1`. All domain routes are wired to the store; the only
+Base: `/v1`. All domain routes are wired to the store; the only
 `501` left is `POST /payments` (and the webhook) when DOKU keys are missing.
 
 ## Auth

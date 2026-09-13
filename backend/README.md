@@ -10,8 +10,8 @@ make backend-dev       # uvicorn :8000 via .venv
 Endpoints:
 
 - `GET /` — root info
-- `GET /api/v1/health` — liveness probe (no DB)
-- `GET /api/v1/health/db` — readiness probe (`SELECT 1`)
+- `GET /v1/health` — liveness probe (no DB)
+- `GET /v1/health/db` — readiness probe (`SELECT 1`)
 - `GET /docs` — Swagger UI (auto-generated OpenAPI)
 - `GET /redoc` — ReDoc
 - `GET /openapi.json` — raw OpenAPI spec

@@ -36,8 +36,8 @@ cp backend/.env.example backend/.env
 make db-up            # postgres:16 via docker (default)
 make db-upgrade       # alembic upgrade head
 make backend-dev      # uvicorn :8000
-# GET /api/v1/health      liveness (no DB)
-# GET /api/v1/health/db   readiness (SELECT 1)
+# GET /v1/health      liveness (no DB)
+# GET /v1/health/db   readiness (SELECT 1)
 ```
 
 ## Podman (optional, Docker stays default)

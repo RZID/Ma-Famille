@@ -17,7 +17,7 @@ No real money moves anywhere in this project. All calls default to
 
 ## Test flow (no real payment)
 
-1. `POST /api/v1/payments` with `booking_public_id` + `amount` → returns
+1. `POST /v1/payments` with `booking_public_id` + `amount` → returns
    `checkout_url` (a `sandbox.doku.com` page).
 2. Open the URL, pick any channel, then pay via the DOKU **Simulator**
    (`Sandbox dashboard → Settings → Simulator`).
@@ -29,14 +29,14 @@ No DOKU account yet? Preview the same flow with no sign-up at
 ## Webhook
 
 - Path (fixed — DOKU signs it as Request-Target):
-  `POST /api/v1/payments/webhook/doku`
+  `POST /v1/payments/webhook/doku`
 - The endpoint recomputes `Digest` + `HMACSHA256` signature from
   `app/services/doku.py` and rejects mismatches with `401`.
 - `transaction.status: SUCCESS` maps to `paid`, anything else to
   `pending`/`failed`. The invoice is matched to its payment row and a `paid`
   notification auto-confirms a pending booking.
 - Local dev: expose the API publicly first (e.g. `ngrok http 8000`), then
-  paste `https://<you>.ngrok.io/api/v1/payments/webhook/doku` as the
+  paste `https://<you>.ngrok.io/v1/payments/webhook/doku` as the
   Notification URL in the DOKU sandbox dashboard.
 
 ## Layout

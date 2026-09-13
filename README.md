@@ -39,7 +39,7 @@ cp frontend/.env.example frontend/.env
 make backend-install
 make backend-dev
 # -> http://localhost:8000/docs
-# -> http://localhost:8000/api/v1/health
+# -> http://localhost:8000/v1/health
 
 # 3. frontend (new terminal)
 npm --prefix frontend install

@@ -3,7 +3,7 @@
 ## Monorepo
 
 ```text
-backend/   FastAPI, versioned under /api/v1
+backend/   FastAPI, versioned under /v1
 frontend/  Vue 3 SPA, talks to backend via axios
 docs/      decisions + contracts
 .github/   CI + PR template + ownership
