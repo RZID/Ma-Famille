@@ -1,8 +1,9 @@
 name: cd
 
-# Backend deploys to the prod server. The runner lives ON that server and
-# only makes outbound connections, so no public IP or open port is needed.
-# Frontend ships via Cloudflare Pages' own GitHub integration (see docs/DEPLOYMENT.md).
+# Ships to the prod server from GitHub-hosted runners only — no self-hosted
+# runner anywhere. The server has no public IP, so SSH goes through the
+# existing Cloudflare Tunnel (ssh.college.rzidinc.com) gated by a Zero Trust
+# Access service token. See docs/DEPLOYMENT.md for the secrets to set.
 
 on:
   workflow_run:
@@ -15,38 +16,70 @@ concurrency:
   group: prod-deploy
   cancel-in-progress: false
 
+env:
+  SSH_HOST: ${{ vars.DEPLOY_SSH_HOST }}
+  SSH_USER: ${{ vars.DEPLOY_SSH_USER }}
+  APP_DIR: ${{ vars.DEPLOY_APP_DIR }}
+
 jobs:
-  deploy-backend:
+  deliver:
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
-    runs-on: [self-hosted, ma-famille]
-    env:
-      # Set to "podman" as a repo/org variable if the prod server uses Podman.
-      CONTAINER_ENGINE: ${{ vars.CONTAINER_ENGINE || 'docker' }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Build and start prod stack
-        run: |
-          if [ "$CONTAINER_ENGINE" = "podman" ]; then COMPOSE="podman compose"; else COMPOSE="docker compose"; fi
-          echo "COMPOSE=$COMPOSE" >> "$GITHUB_ENV"
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
+      - name: Pack sources
+        run: git archive --format=tar.gz -o /tmp/app.tgz HEAD
 
-      - name: Wait for health gate
+      - name: Install cloudflared
         run: |
-          for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null \
-              && curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
-              echo "api and web healthy"
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cloudflared.deb
+          sudo dpkg -i /tmp/cloudflared.deb
+
+      - name: Write SSH config
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '#!/bin/sh\nexec cloudflared access ssh --hostname "$0" --service-token-id "$CF_ID" --service-token-secret "$CF_SECRET"\n' > ~/cfssh
+          chmod +x ~/cfssh
+          printf 'Host prod\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy\n  StrictHostKeyChecking accept-new\n  ProxyCommand ~/cfssh %%h\n' "$SSH_HOST" "$SSH_USER" > ~/.ssh/config
+
+      - name: Deliver tarball
+        run: scp /tmp/app.tgz prod:"$APP_DIR/app.tgz"
+        env:
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+
+      - name: Deploy on prod server
+        run: |
+          ssh prod <<EOF
+          set -e
+          mkdir -p "$APP_DIR"
+          cd "$APP_DIR"
+          tar xzf app.tgz && rm app.tgz
+          if command -v docker >/dev/null; then COMPOSE="docker compose"; else COMPOSE="podman compose"; fi
+          \$COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
+          for i in \$(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
+              echo "prod web healthy"
               exit 0
             fi
             sleep 2
           done
           echo "prod stack never became healthy" >&2
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
+          \$COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
           exit 1
+          EOF
+        env:
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
       - name: Prune old images
         run: |
-          if [ "$CONTAINER_ENGINE" = "podman" ]; then podman image prune -f; else docker image prune -f; fi
+          ssh prod 'if command -v docker >/dev/null; then docker image prune -f; else podman image prune -f; fi'
+        env:
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}

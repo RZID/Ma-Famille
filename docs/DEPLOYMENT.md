@@ -14,9 +14,13 @@ Traffic:
 browser ──HTTPS──▶ cloudflared tunnel (LXC) ──LAN──▶ 192.168.1.50:8080 (nginx web, backend VM)
                                                         ├─ /ma-famille/     → static SPA
                                                         └─ /ma-famille/api/ → proxy to api:8000
-GitHub ──outbound only──▶ self-hosted runner (backend VM, no public IP needed)
+GitHub runner ──SSH over tunnel──▶ ssh.college.rzidinc.com ──LAN──▶ backend VM:22 (scp tarball + compose up)
 Cloudflare Pages ── previews per PR only (cannot mount at a subpath)
 ```
+
+No self-hosted runner anywhere: deploys run on GitHub-hosted runners and
+reach the prod server through the tunnel, gated by a Zero Trust Access
+service token (no public IP, no open SSH port).
 
 Tunnel and app live on different hosts, so the ingress points at the
 backend VM's LAN IP (give the VM a static IP or DHCP reservation, and open
@@ -38,10 +42,8 @@ bash scripts/bootstrap-server.sh
 1. Install Docker (or Podman) and `cloudflared` until the checker is happy.
 2. Merge `tunnel/config.example.yml` into the existing tunnel config
    (specific paths before any catch-all), then restart cloudflared.
-3. Install the GitHub Actions runner
-   (repo → Settings → Actions → Runners → New self-hosted runner),
-   labels must include `ma-famille`, and register it as a systemd service
-   so it survives reboots.
+3. Create the deploy key + GitHub secrets + Access app from
+   "One-time access setup" below (replaces any runner).
 4. Clone the repo to `~/ma-famille` and create `backend/.env` from
    `backend/.env.prod.example` (fill `POSTGRES_PASSWORD`,
    `MANAGER_TOKEN`, DOKU keys).
@@ -71,9 +73,33 @@ and run one real sandbox payment (see `docs/PAYMENTS.md`).
 
 1. Push to `main` → `ci` runs (lint, migrate, pytest, vite build).
 2. On CI success, `cd` fires automatically (`workflow_dispatch` forces one
-   manually): the prod-server runner rebuilds `compose.prod.yml`,
-   the api container runs `alembic upgrade head` on boot, then the
-   workflow curls the local health gate before finishing.
+   manually): GitHub packs the tree, `scp`s it through the tunnel, and
+   `ssh`es the prod server to rebuild `compose.prod.yml` (migrations run
+   inside the api container on boot), then gates on the public `/ma-famille`
+   health path before finishing.
+
+## One-time access setup (instead of a runner)
+
+On the backend VM, create a deploy user/key (no passphrase):
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/deploy -N ""
+cat ~/.ssh/deploy.pub >> ~/.ssh/authorized_keys
+```
+
+Then register in GitHub (repo → Settings → Secrets and variables → Actions):
+
+| Secret / variable | Value |
+|---|---|
+| `DEPLOY_SSH_KEY` (secret) | contents of `~/.ssh/deploy` (private part) |
+| `CF_ACCESS_CLIENT_ID` (secret) | Zero Trust service token ID |
+| `CF_ACCESS_CLIENT_SECRET` (secret) | Zero Trust service token secret |
+| `DEPLOY_SSH_HOST` (variable) | `ssh.college.rzidinc.com` |
+| `DEPLOY_SSH_USER` (variable) | VM username holding the public key |
+| `DEPLOY_APP_DIR` (variable) | checkout path on the VM, e.g. `/home/rzidinc/ma-famille` |
+
+And in Cloudflare Zero Trust: protect `ssh.college.rzidinc.com` with an
+Access app whose only rule allows that service token.
 
 ## Frontend
 

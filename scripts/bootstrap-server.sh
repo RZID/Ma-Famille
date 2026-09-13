@@ -53,6 +53,6 @@ for port in 8080 8000; do
   fi
 done
 
-echo "== 6. runner =="
-warn "install manually: repo Settings → Actions → Runners → New self-hosted runner (label: ma-famille), then ./svc.sh install + start"
+echo "== 6. deploy access =="
+warn "no runner needed. Instead: ssh-keygen deploy key, add pubkey here (~/.ssh/authorized_keys), store private part as DEPLOY_SSH_KEY secret (see docs/DEPLOYMENT.md)"
 echo "done."

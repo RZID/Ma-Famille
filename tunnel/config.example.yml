@@ -1,8 +1,10 @@
 # Cloudflared ingress snippet for the TUNNEL host (here: separate LXC).
 # The app itself runs on the backend VM, so point at the VM's LAN IP —
 # NOT 127.0.0.1 (that would be this LXC's own loopback).
-# Merge the college.rzidinc.com rule into the existing config.yml
+# Merge the rules into the existing config.yml
 # (specific paths first, catch-all last), then: cloudflared tunnel restart.
+# Protect ssh.college.rzidinc.com with a Zero Trust Access app so only the
+# deploy service token can open SSH (Dashboard → Access → Applications).
 tunnel: <tunnel-id>
 credentials-file: /root/.cloudflared/<tunnel-id>.json
 
@@ -10,5 +12,7 @@ ingress:
   - hostname: college.rzidinc.com
     path: /ma-famille/*
     service: http://192.168.1.50:8080 # <-- LAN IP of the backend VM
+  - hostname: ssh.college.rzidinc.com
+    service: ssh://192.168.1.50:22 # <-- same VM, deploy traffic only
   # ... existing rules for the rest of college.rzidinc.com ...
   - service: http_status:404
