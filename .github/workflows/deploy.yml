@@ -63,7 +63,7 @@ jobs:
           fail() { echo "PREFLIGHT FAIL: $1" >&2; exit 1; }
           command -v podman >/dev/null || fail "podman not installed"
           (podman compose version >/dev/null 2>&1 || command -v podman-compose >/dev/null) || fail "no compose (install podman compose plugin or podman-compose)"
-          [ "$(stat -fc %T /sys/fs/cgroup 2>/dev/null)" = "cgroup2fs" ] || fail "cgroup v2 unavailable — enable nesting on the CT (pct set <id> --features nesting=1) and reboot"
+          [ -e /sys/fs/cgroup/cgroup.controllers ] || fail "cgroup v2 unavailable — on Alpine: doas rc-update add cgroups boot && reboot"
           command -v curl >/dev/null || fail "curl not installed (needed for health gate)"
           [ -f "$APP_DIR/backend/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/backend/.env missing — create it from backend/.env.prod.example"
           [ -f "$APP_DIR/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/.env missing (POSTGRES_*/VITE_API_URL for compose)"
