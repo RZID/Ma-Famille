@@ -6,9 +6,11 @@ name: ci
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - "frontend/**"
   pull_request:
-  paths-ignore:
-    - "frontend/**"
+    paths-ignore:
+      - "frontend/**"
 
 jobs:
   backend:
