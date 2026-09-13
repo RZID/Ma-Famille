@@ -102,12 +102,24 @@ Then register in GitHub (repo → Settings → Secrets and variables → Actions
 And in Cloudflare Zero Trust: protect `be-ssh.rzidinc.com` with an
 Access app whose only rule allows that service token.
 
-## Frontend
+## Frontend (Cloudflare Pages, deployed by CI)
 
-Ships only via Cloudflare Pages (own project + hostname, `VITE_API_URL`
-pointing at `https://college-api.rzidinc.com/ma-famille`). Nothing in this
-repo's pipeline builds it: `public/_redirects` keeps vue-router history
-mode working, and every PR gets a preview URL automatically.
+One-time dashboard setup: Workers & Pages → Create → Pages → name it
+exactly `ma-famille` (upload a dummy file if asked — CI overwrites it on
+the first deploy). After that, everything is automatic:
+
+- Push touching `frontend/**` (or manual `web` run) → install → build →
+  `wrangler pages deploy` from the `web` workflow.
+- `VITE_API_URL` comes from the `VITE_API_URL` repo variable (default:
+  `https://college-api.rzidinc.com/ma-famille`).
+- `public/_redirects` ships inside `dist/`, so vue-router history mode
+  works on refresh and every production deploy keeps its permanent URL.
+- Backend CORS already allows the Pages hostname pattern via
+  `BACKEND_CORS_ORIGINS` — add the exact `*.pages.dev` URL there once the
+  first Pages deploy assigns it.
+
+Needs two secrets: `CLOUDFLARE_API_TOKEN` (Pages:Edit) and
+`CLOUDFLARE_ACCOUNT_ID`.
 
 ## Rollback
 
