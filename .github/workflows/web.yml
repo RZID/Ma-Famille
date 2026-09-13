@@ -1,9 +1,12 @@
 name: web
 
-# Frontend ships to Cloudflare Pages from CI. No Cloudflare dashboard
-# clicking after the one-time project creation (see docs/DEPLOYMENT.md).
+# Frontend ships to Cloudflare Pages + Worker from CI:
+# - root build      → project ma-famille      (previews, pages.dev)
+# - prefixed build  → project ma-famille-path (served at college.rzidinc.com/ma-famille/*)
+# - worker          → routes the college subpath to the prefixed build
 #
-# Required secrets: CLOUDFLARE_API_TOKEN (Pages:Edit), CLOUDFLARE_ACCOUNT_ID
+# Required secrets: CLOUDFLARE_API_TOKEN (Pages:Edit + Workers Scripts:Edit),
+#   CLOUDFLARE_ACCOUNT_ID
 # Env: VITE_API_URL comes from vars (fallback: prod API).
 
 on:
@@ -11,6 +14,9 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+      - "workers/**"
+      - "wrangler.toml"
+      - ".github/workflows/web.yml"
   workflow_dispatch:
 
 concurrency:
@@ -35,12 +41,31 @@ jobs:
       - name: Install deps
         run: npm --prefix frontend ci
 
-      - name: Build
+      - name: Build root (previews)
         run: npm --prefix frontend run build
 
-      - name: Deploy to Pages
+      - name: Deploy previews to Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy frontend/dist --project-name=ma-famille --commit-dirty=true
+
+      - name: Build prefixed (college subpath)
+        run: npm --prefix frontend run build
+        env:
+          VITE_BASE_PATH: /ma-famille/
+
+      - name: Deploy subpath build to Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=ma-famille-path --commit-dirty=true
+
+      - name: Deploy router worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

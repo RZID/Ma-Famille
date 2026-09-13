@@ -102,23 +102,24 @@ Then register in GitHub (repo → Settings → Secrets and variables → Actions
 And in Cloudflare Zero Trust: protect `be-ssh.rzidinc.com` with an
 Access app whose only rule allows that service token.
 
-## Frontend (Cloudflare Pages, deployed by CI)
+## Frontend (Cloudflare Pages + Worker, deployed by CI)
 
-One-time dashboard setup: Workers & Pages → Create → Pages → name it
-exactly `ma-famille` (upload a dummy file if asked — CI overwrites it on
-the first deploy). After that, everything is automatic:
+Final URL: `https://college.rzidinc.com/ma-famille` (subpath). How it hangs
+together:
 
-- Push touching `frontend/**` (or manual `web` run) → install → build →
-  `wrangler pages deploy` from the `web` workflow.
+- `web` workflow builds twice: root build -> project `ma-famille`
+  (previews, `*.pages.dev`), prefixed build (`VITE_BASE_PATH=/ma-famille/`)
+  -> project `ma-famille-path` (never visited directly).
+- `workers/router.js` (project `ma-famille-router`, route
+  `college.rzidinc.com/ma-famille*`) strips the prefix and fetches the
+  prefixed build. No HTML rewriting: assets and router base already carry
+  the prefix from the build.
 - `VITE_API_URL` comes from the `VITE_API_URL` repo variable (default:
   `https://college-api.rzidinc.com/ma-famille`).
-- `public/_redirects` ships inside `dist/`, so vue-router history mode
-  works on refresh and every production deploy keeps its permanent URL.
-- Backend CORS already allows the Pages hostname pattern via
-  `BACKEND_CORS_ORIGINS` — add the exact `*.pages.dev` URL there once the
-  first Pages deploy assigns it.
 
-Needs two secrets: `CLOUDFLARE_API_TOKEN` (Pages:Edit) and
+One-time setup: create the **two** Pages projects (`ma-famille`,
+`ma-famille-path`) in the dashboard. Needs two secrets:
+`CLOUDFLARE_API_TOKEN` (**Pages:Edit + Workers Scripts:Edit**) and
 `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Rollback
