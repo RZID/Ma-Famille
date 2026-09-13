@@ -74,6 +74,19 @@ def main() -> None:
                 status="confirmed",
             )
         )
+        # Second slot stays pending so POST /payments can be tried immediately.
+        second_slot = db.scalars(
+            select(Slot).where(Slot.id != first_slot.id).order_by(Slot.id)
+        ).first()
+        second_slot.status = "booked"
+        db.add(
+            Booking(
+                slot_id=second_slot.id,
+                customer_name="Checkout Tester",
+                customer_contact="0812000001",
+                status="pending",
+            )
+        )
         db.commit()
         print("seeded", VENUE_NAME)
     finally:
