@@ -6,7 +6,7 @@ const api = axios.create({
 })
 
 export async function fetchHealth() {
-  const res = await api.get('/api/v1/health')
+  const res = await api.get('/v1/health')
   return res.data
 }
 

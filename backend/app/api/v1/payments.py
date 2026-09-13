@@ -19,7 +19,7 @@ from app.services import payments as payment_service
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
-WEBHOOK_TARGET = "/api/v1/payments/webhook/doku"
+WEBHOOK_TARGET = f"{settings.root_path}{settings.api_v1_prefix}/payments/webhook/doku"
 
 
 def _to_response(db: Session, payment) -> PaymentResponse:

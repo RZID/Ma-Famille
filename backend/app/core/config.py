@@ -6,7 +6,7 @@ class Settings(BaseSettings):
 
     app_name: str = "ma-famille-api"
     app_env: str = "development"
-    api_v1_prefix: str = "/api/v1"
+    api_v1_prefix: str = "/v1"
     backend_cors_origins: str = "http://localhost:5173,http://localhost:3000"
     database_url: str = "postgresql+psycopg://mafamille:mafamille@localhost:5432/mafamille"
     # Subpath hosting: "/ma-famille" in prod (college.rzidinc.com/ma-famille),
