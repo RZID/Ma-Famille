@@ -112,6 +112,7 @@ def create_checkout(
     timestamp = utc_timestamp()
     request_id = new_request_id()
     headers = {
+        "Content-Type": "application/json",
         "Client-Id": settings.doku_client_id,
         "Request-Id": request_id,
         "Request-Timestamp": timestamp,
