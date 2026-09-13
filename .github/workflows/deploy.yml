@@ -39,7 +39,7 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy
           chmod 600 ~/.ssh/deploy
-          printf '#!/bin/sh\nexec cloudflared access ssh --hostname "$0" --service-token-id "$TUNNEL_SERVICE_TOKEN_ID" --service-token-secret "$TUNNEL_SERVICE_TOKEN_SECRET"\n' > ~/cfssh
+          printf '#!/bin/sh\nexec cloudflared access ssh --hostname "$1" --service-token-id "$TUNNEL_SERVICE_TOKEN_ID" --service-token-secret "$TUNNEL_SERVICE_TOKEN_SECRET"\n' > ~/cfssh
           chmod +x ~/cfssh
           printf 'Host prod\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy\n  StrictHostKeyChecking accept-new\n  ProxyCommand ~/cfssh %%h\n' "$DEPLOY_HOST" "$DEPLOY_USER" > ~/.ssh/config
 
