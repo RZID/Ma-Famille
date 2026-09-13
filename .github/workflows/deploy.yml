@@ -83,7 +83,7 @@ jobs:
       - name: Deploy on prod server
         run: |
           ssh prod <<EOF
-          set -e
+          set -ex
           cd "$DEPLOY_APP_DIR"
           tar xzf app.tgz && rm app.tgz
           if podman compose version >/dev/null 2>&1; then COMPOSE="podman compose"; else COMPOSE="podman-compose"; fi
