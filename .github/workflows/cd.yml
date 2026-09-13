@@ -19,26 +19,34 @@ jobs:
   deploy-backend:
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, ma-famille]
+    env:
+      # Set to "podman" as a repo/org variable if the prod server uses Podman.
+      CONTAINER_ENGINE: ${{ vars.CONTAINER_ENGINE || 'docker' }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Build and start prod stack
-        run: docker compose -f docker-compose.yml -f compose.prod.yml up -d --build
+        run: |
+          if [ "$CONTAINER_ENGINE" = "podman" ]; then COMPOSE="podman compose"; else COMPOSE="docker compose"; fi
+          echo "COMPOSE=$COMPOSE" >> "$GITHUB_ENV"
+          $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
 
       - name: Wait for health gate
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
-              echo "api healthy"
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null \
+              && curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
+              echo "api and web healthy"
               exit 0
             fi
             sleep 2
           done
-          echo "api never became healthy" >&2
-          docker compose -f docker-compose.yml -f compose.prod.yml logs --tail=50 api
+          echo "prod stack never became healthy" >&2
+          $COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
           exit 1
 
       - name: Prune old images
-        run: docker image prune -f
+        run: |
+          if [ "$CONTAINER_ENGINE" = "podman" ]; then podman image prune -f; else docker image prune -f; fi

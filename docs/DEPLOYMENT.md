@@ -41,6 +41,27 @@ bash scripts/bootstrap-server.sh
 4. Clone the repo to `~/ma-famille` and create `backend/.env` from
    `backend/.env.prod.example` (fill `POSTGRES_PASSWORD`,
    `MANAGER_TOKEN`, DOKU keys).
+5. Create the compose env file at repo root (`~/ma-famille/.env`) so
+   image builds and `POSTGRES_*` interpolate — same passwords as step 4:
+   ```bash
+   POSTGRES_USER=mafamille
+   POSTGRES_PASSWORD=change-me
+   POSTGRES_DB=mafamille
+   VITE_API_URL=https://college.rzidinc.com/ma-famille
+   ```
+
+## First deploy checklist
+
+After the first green `cd` run, on the server:
+
+```bash
+docker compose -f docker-compose.yml -f compose.prod.yml exec api python -m app.db.seed
+curl http://127.0.0.1:8080/ma-famille/api/v1/health/db
+```
+
+Then set the DOKU sandbox Notification URL to
+`https://college.rzidinc.com/ma-famille/api/v1/payments/webhook/doku`
+and run one real sandbox payment (see `docs/PAYMENTS.md`).
 
 ## How a deploy flows
 
