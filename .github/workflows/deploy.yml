@@ -80,17 +80,17 @@ jobs:
           cd "$DEPLOY_APP_DIR"
           tar xzf app.tgz && rm app.tgz
           if podman compose version >/dev/null 2>&1; then COMPOSE="podman compose"; else COMPOSE="podman-compose"; fi
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
+          \$COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
           if command -v curl >/dev/null; then FETCH="curl -fsS"; else FETCH="wget -q -O /dev/null"; fi
           for i in $(seq 1 30); do
-            if $FETCH http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
+            if \$FETCH http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
               echo "prod web healthy"
               exit 0
             fi
             sleep 2
           done
           echo "prod stack never became healthy" >&2
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
+          \$COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
           exit 1
           EOF
         env:
