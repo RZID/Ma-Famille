@@ -40,8 +40,10 @@ bash scripts/bootstrap-server.sh
 ```
 
 1. Install Docker (or Podman) and `cloudflared` until the checker is happy.
-2. Merge `tunnel/config.example.yml` into the existing tunnel config
-   (specific paths before any catch-all), then restart cloudflared.
+2. Add the two tunnel hostnames in the dashboard
+   (Zero Trust → Networks → Tunnels → Public Hostnames) —
+   see `tunnel/config.example.yml` for the exact table.
+   The tunnel runs in token mode, so no local config file is involved.
 3. Create the deploy key + GitHub secrets + Access app from
    "One-time access setup" below (replaces any runner).
 4. Clone the repo to `~/ma-famille` and create `backend/.env` from
