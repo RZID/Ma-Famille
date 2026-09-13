@@ -26,3 +26,15 @@ services:
       ROOT_PATH: /ma-famille
     ports:
       - "127.0.0.1:8000:8000"
+
+  # Public entrypoint for the tunnel (LXC reaches the VM over LAN, so this
+  # binds all interfaces — the api above stays loopback-only).
+  proxy:
+    image: docker.io/library/nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
