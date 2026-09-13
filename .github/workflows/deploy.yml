@@ -43,30 +43,23 @@ jobs:
           chmod +x ~/cfssh
           printf 'Host prod\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy\n  StrictHostKeyChecking accept-new\n  ProxyCommand ~/cfssh %%h\n' "$DEPLOY_HOST" "$DEPLOY_USER" > ~/.ssh/config
 
+      - name: Pack sources
+        run: git archive --format=tar.gz -o /tmp/app.tgz HEAD
+
+      - name: Deliver tarball
+        run: |
+          ssh prod 'mkdir -p "$DEPLOY_APP_DIR"'
+          scp /tmp/app.tgz prod:"$DEPLOY_APP_DIR/app.tgz"
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+
       - name: Deploy on prod server
         run: |
           ssh prod <<EOF
           set -e
-          if ! command -v git >/dev/null; then
-            if [ "$(id -u)" = "0" ]; then SUDO=""; elif command -v sudo >/dev/null; then SUDO="sudo"; else echo "need root or sudo to install git" >&2; exit 1; fi
-            if command -v apt-get >/dev/null; then
-              $SUDO apt-get update -qq && $SUDO apt-get install -y -qq git
-            elif command -v apk >/dev/null; then
-              $SUDO apk add --no-cache git
-            elif command -v dnf >/dev/null; then
-              $SUDO dnf install -y -q git
-            else
-              echo "git missing and no known package manager" >&2
-              exit 1
-            fi
-          fi
-          if [ -d "$DEPLOY_APP_DIR/.git" ]; then
-            cd "$DEPLOY_APP_DIR"
-            git pull --ff-only
-          else
-            git clone "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "$DEPLOY_APP_DIR"
-            cd "$DEPLOY_APP_DIR"
-          fi
+          cd "$DEPLOY_APP_DIR"
+          tar xzf app.tgz && rm app.tgz
           podman compose -f docker-compose.yml -f compose.prod.yml up -d --build
           for i in \$(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
