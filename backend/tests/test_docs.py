@@ -11,8 +11,8 @@ def test_openapi_json_lists_health_routes():
     spec = res.json()
     assert spec["info"]["title"] == "ma-famille-api"
     paths = spec["paths"]
-    assert "/api/v1/health" in paths
-    assert "/api/v1/health/db" in paths
+    assert "/v1/health" in paths
+    assert "/v1/health/db" in paths
 
 
 def test_swagger_ui_served():

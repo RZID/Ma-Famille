@@ -36,7 +36,7 @@ def test_health_db_ok_with_override():
     app.dependency_overrides[get_db] = override_get_db
     try:
         client = TestClient(app)
-        res = client.get("/api/v1/health/db")
+        res = client.get("/v1/health/db")
         assert res.status_code == 200
         assert res.json() == {"status": "ok", "database": "reachable"}
     finally:
@@ -57,7 +57,7 @@ def test_health_db_503_when_unreachable():
     app.dependency_overrides[get_db] = override_get_db_broken
     try:
         client = TestClient(app)
-        res = client.get("/api/v1/health/db")
+        res = client.get("/v1/health/db")
         assert res.status_code == 503
         assert res.json()["detail"] == "database unreachable"
     finally:

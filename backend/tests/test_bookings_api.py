@@ -27,9 +27,9 @@ def _client():
 
 
 def _slot(client):
-    venue = client.post("/api/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
+    venue = client.post("/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
     court = client.post(
-        "/api/v1/courts",
+        "/v1/courts",
         json={
             "venue_public_id": venue["public_id"],
             "name": "C1",
@@ -39,7 +39,7 @@ def _slot(client):
         },
     ).json()
     slot = client.post(
-        "/api/v1/slots",
+        "/v1/slots",
         json=[
             {
                 "court_public_id": court["public_id"],
@@ -57,7 +57,7 @@ def test_booking_flow_with_conflict():
     try:
         slot_id = _slot(client)
         first = client.post(
-            "/api/v1/bookings",
+            "/v1/bookings",
             json={
                 "slot_public_id": slot_id,
                 "customer_name": "Budi",
@@ -68,11 +68,11 @@ def test_booking_flow_with_conflict():
         assert first.json()["status"] == "pending"
         public_id = first.json()["public_id"]
 
-        slot_state = client.get(f"/api/v1/slots/{slot_id}")
+        slot_state = client.get(f"/v1/slots/{slot_id}")
         assert slot_state.json()["status"] == "booked"
 
         second = client.post(
-            "/api/v1/bookings",
+            "/v1/bookings",
             json={
                 "slot_public_id": slot_id,
                 "customer_name": "Ani",
@@ -82,16 +82,16 @@ def test_booking_flow_with_conflict():
         assert second.status_code == 409
         assert second.json()["detail"] == "slot is booked"
 
-        history = client.get("/api/v1/bookings", params={"customer_contact": "0812"})
+        history = client.get("/v1/bookings", params={"customer_contact": "0812"})
         assert len(history.json()) == 1
 
-        confirmed = client.post(f"/api/v1/bookings/{public_id}/confirm")
+        confirmed = client.post(f"/v1/bookings/{public_id}/confirm")
         assert confirmed.json()["status"] == "confirmed"
 
-        cancelled = client.post(f"/api/v1/bookings/{public_id}/cancel")
+        cancelled = client.post(f"/v1/bookings/{public_id}/cancel")
         assert cancelled.json()["status"] == "cancelled"
 
-        freed = client.get(f"/api/v1/slots/{slot_id}")
+        freed = client.get(f"/v1/slots/{slot_id}")
         assert freed.json()["status"] == "available"
     finally:
         app.dependency_overrides.pop(get_db, None)
@@ -101,7 +101,7 @@ def test_booking_unknown_slot_is_404():
     client = _client()
     try:
         res = client.post(
-            "/api/v1/bookings",
+            "/v1/bookings",
             json={
                 "slot_public_id": "00000000-0000-0000-0000-000000000000",
                 "customer_name": "Budi",

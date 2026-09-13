@@ -29,9 +29,9 @@ def _client():
 def test_manager_bookings_and_occupancy():
     client = _client()
     try:
-        venue = client.post("/api/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
+        venue = client.post("/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
         court = client.post(
-            "/api/v1/courts",
+            "/v1/courts",
             json={
                 "venue_public_id": venue["public_id"],
                 "name": "C1",
@@ -41,7 +41,7 @@ def test_manager_bookings_and_occupancy():
             },
         ).json()
         slots = client.post(
-            "/api/v1/slots",
+            "/v1/slots",
             json=[
                 {
                     "court_public_id": court["public_id"],
@@ -58,7 +58,7 @@ def test_manager_bookings_and_occupancy():
             ],
         ).json()
         booking = client.post(
-            "/api/v1/bookings",
+            "/v1/bookings",
             json={
                 "slot_public_id": slots[0]["public_id"],
                 "customer_name": "Budi",
@@ -66,19 +66,19 @@ def test_manager_bookings_and_occupancy():
             },
         ).json()
 
-        all_bookings = client.get("/api/v1/manager/bookings")
+        all_bookings = client.get("/v1/manager/bookings")
         assert len(all_bookings.json()) == 1
 
-        pending = client.get("/api/v1/manager/bookings", params={"booking_status": "pending"})
+        pending = client.get("/v1/manager/bookings", params={"booking_status": "pending"})
         assert len(pending.json()) == 1
 
         confirmed = client.get(
-            "/api/v1/manager/bookings", params={"booking_status": "confirmed"}
+            "/v1/manager/bookings", params={"booking_status": "confirmed"}
         )
         assert confirmed.json() == []
 
         occ = client.get(
-            "/api/v1/manager/occupancy",
+            "/v1/manager/occupancy",
             params={"from_day": "2026-10-01", "to_day": "2026-10-01"},
         ).json()
         assert occ[0]["total_slots"] == 2

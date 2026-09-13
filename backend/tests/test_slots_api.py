@@ -27,9 +27,9 @@ def _client():
 
 
 def _court(client):
-    venue = client.post("/api/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
+    venue = client.post("/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
     court = client.post(
-        "/api/v1/courts",
+        "/v1/courts",
         json={
             "venue_public_id": venue["public_id"],
             "name": "C1",
@@ -59,22 +59,22 @@ def test_slot_availability_roundtrip():
                 "price": 120000,
             },
         ]
-        created = client.post("/api/v1/slots", json=payload)
+        created = client.post("/v1/slots", json=payload)
         assert created.status_code == 201, created.text
         assert len(created.json()) == 2
         first_id = created.json()[0]["public_id"]
 
         day = client.get(
-            "/api/v1/slots", params={"court_public_id": court_id, "day": "2026-10-01"}
+            "/v1/slots", params={"court_public_id": court_id, "day": "2026-10-01"}
         )
         assert len(day.json()) == 2
 
         other = client.get(
-            "/api/v1/slots", params={"court_public_id": court_id, "day": "2026-10-02"}
+            "/v1/slots", params={"court_public_id": court_id, "day": "2026-10-02"}
         )
         assert other.json() == []
 
-        blocked = client.patch(f"/api/v1/slots/{first_id}", json={"status": "blocked"})
+        blocked = client.patch(f"/v1/slots/{first_id}", json={"status": "blocked"})
         assert blocked.json()["status"] == "blocked"
     finally:
         app.dependency_overrides.pop(get_db, None)
@@ -85,7 +85,7 @@ def test_slot_rejects_bad_range_and_unknown_court():
     try:
         court_id = _court(client)
         bad = client.post(
-            "/api/v1/slots",
+            "/v1/slots",
             json=[
                 {
                     "court_public_id": court_id,
@@ -98,7 +98,7 @@ def test_slot_rejects_bad_range_and_unknown_court():
         assert bad.status_code == 422
 
         missing = client.get(
-            "/api/v1/slots",
+            "/v1/slots",
             params={
                 "court_public_id": "00000000-0000-0000-0000-000000000000",
                 "day": "2026-10-01",

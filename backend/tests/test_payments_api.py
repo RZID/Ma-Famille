@@ -13,7 +13,7 @@ from app.main import app
 from app.services import doku
 from app.services.doku import CheckoutResult
 
-WEBHOOK_PATH = "/api/v1/payments/webhook/doku"
+WEBHOOK_PATH = "/v1/payments/webhook/doku"
 
 
 def _client():
@@ -35,9 +35,9 @@ def _client():
 
 
 def _booking(client):
-    venue = client.post("/api/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
+    venue = client.post("/v1/venues", json={"name": "GOR", "address": "Jkt"}).json()
     court = client.post(
-        "/api/v1/courts",
+        "/v1/courts",
         json={
             "venue_public_id": venue["public_id"],
             "name": "C1",
@@ -47,7 +47,7 @@ def _booking(client):
         },
     ).json()
     slot = client.post(
-        "/api/v1/slots",
+        "/v1/slots",
         json=[
             {
                 "court_public_id": court["public_id"],
@@ -58,7 +58,7 @@ def _booking(client):
         ],
     ).json()
     booking = client.post(
-        "/api/v1/bookings",
+        "/v1/bookings",
         json={
             "slot_public_id": slot[0]["public_id"],
             "customer_name": "Budi",
@@ -100,21 +100,21 @@ def test_payment_checkout_and_mark_paid_auto_confirms(monkeypatch):
 
         monkeypatch.setattr(payments.doku, "create_checkout", fake_checkout)
         created = client.post(
-            "/api/v1/payments",
+            "/v1/payments",
             json={"booking_public_id": booking_id, "amount": 50000, "kind": "deposit"},
         )
         assert created.status_code == 200, created.text
         invoice = created.json()["invoice_number"]
 
-        listed = client.get("/api/v1/payments", params={"booking_public_id": booking_id})
+        listed = client.get("/v1/payments", params={"booking_public_id": booking_id})
         assert len(listed.json()) == 1
         assert listed.json()[0]["status"] == "unpaid"
         public_id = listed.json()[0]["public_id"]
 
-        paid = client.post(f"/api/v1/payments/{public_id}/mark-paid")
+        paid = client.post(f"/v1/payments/{public_id}/mark-paid")
         assert paid.json()["status"] == "paid"
 
-        booking = client.get(f"/api/v1/bookings/{booking_id}")
+        booking = client.get(f"/v1/bookings/{booking_id}")
         assert booking.json()["status"] == "confirmed"
 
         monkeypatch.setattr(settings, "doku_client_id", "MCH-TEST")
@@ -137,7 +137,7 @@ def test_payment_without_keys_is_501():
     try:
         booking_id = _booking(client)
         res = client.post(
-            "/api/v1/payments",
+            "/v1/payments",
             json={"booking_public_id": booking_id, "amount": 50000, "kind": "deposit"},
         )
         assert res.status_code == 501

@@ -14,6 +14,6 @@ def test_root_returns_service_info():
 
 
 def test_v1_health_returns_ok():
-    res = client.get("/api/v1/health")
+    res = client.get("/v1/health")
     assert res.status_code == 200
     assert res.json() == {"status": "ok", "service": "ma-famille-api"}
