@@ -3,7 +3,7 @@
 # Podman: make db-up CONTAINER_ENGINE=podman
 services:
   db:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: mafamille
