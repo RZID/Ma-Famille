@@ -56,13 +56,31 @@ jobs:
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
+      - name: Preflight prod server
+        run: |
+          ssh prod "APP_DIR='$DEPLOY_APP_DIR' bash -s" <<'EOF'
+          set -e
+          fail() { echo "PREFLIGHT FAIL: $1" >&2; exit 1; }
+          command -v podman >/dev/null || fail "podman not installed"
+          (podman compose version >/dev/null 2>&1 || command -v podman-compose >/dev/null) || fail "no compose (install podman compose plugin or podman-compose)"
+          [ "$(stat -fc %T /sys/fs/cgroup 2>/dev/null)" = "cgroup2fs" ] || fail "cgroup v2 unavailable — enable nesting on the CT (pct set <id> --features nesting=1) and reboot"
+          command -v curl >/dev/null || fail "curl not installed (needed for health gate)"
+          [ -f "$APP_DIR/backend/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/backend/.env missing — create it from backend/.env.prod.example"
+          [ -f "$APP_DIR/.env" ] || echo "PREFLIGHT WARN: $APP_DIR/.env missing (POSTGRES_*/VITE_API_URL for compose)"
+          echo "PREFLIGHT OK"
+          EOF
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+
       - name: Deploy on prod server
         run: |
           ssh prod <<EOF
           set -e
           cd "$DEPLOY_APP_DIR"
           tar xzf app.tgz && rm app.tgz
-          podman compose -f docker-compose.yml -f compose.prod.yml up -d --build
+          if podman compose version >/dev/null 2>&1; then COMPOSE="podman compose"; else COMPOSE="podman-compose"; fi
+          $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
           for i in \$(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/ma-famille/api/v1/health >/dev/null; then
               echo "prod web healthy"
@@ -71,7 +89,7 @@ jobs:
             sleep 2
           done
           echo "prod stack never became healthy" >&2
-          podman compose -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
+          $COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api web
           exit 1
           EOF
         env:
