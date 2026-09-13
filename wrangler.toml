@@ -1,0 +1,7 @@
+name = "ma-famille-router"
+main = "workers/router.js"
+compatibility_date = "2026-09-01"
+
+routes = [
+  { pattern = "college.rzidinc.com/ma-famille*", zone_name = "rzidinc.com" },
+]
