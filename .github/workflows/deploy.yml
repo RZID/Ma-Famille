@@ -58,7 +58,7 @@ jobs:
 
       - name: Preflight prod server
         run: |
-          ssh prod "APP_DIR='$DEPLOY_APP_DIR' bash -s" <<'EOF'
+          ssh prod "APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
           set -e
           fail() { echo "PREFLIGHT FAIL: $1" >&2; exit 1; }
           command -v podman >/dev/null || fail "podman not installed"
