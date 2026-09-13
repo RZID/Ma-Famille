@@ -11,12 +11,16 @@ https://college.rzidinc.com/ma-famille/docs       → Swagger UI
 Traffic:
 
 ```text
-browser ──HTTPS──▶ cloudflared tunnel ──▶ 127.0.0.1:8080 (nginx web)
-                                              ├─ /ma-famille/     → static SPA
-                                              └─ /ma-famille/api/ → proxy to api:8000
-GitHub ──outbound only──▶ self-hosted runner (prod server, no public IP needed)
+browser ──HTTPS──▶ cloudflared tunnel (LXC) ──LAN──▶ 192.168.1.50:8080 (nginx web, backend VM)
+                                                        ├─ /ma-famille/     → static SPA
+                                                        └─ /ma-famille/api/ → proxy to api:8000
+GitHub ──outbound only──▶ self-hosted runner (backend VM, no public IP needed)
 Cloudflare Pages ── previews per PR only (cannot mount at a subpath)
 ```
+
+Tunnel and app live on different hosts, so the ingress points at the
+backend VM's LAN IP (give the VM a static IP or DHCP reservation, and open
+`8080/tcp` for the LXC host, e.g. `ufw allow from <lxc-ip> to any port 8080`).
 
 > Cloudflare Pages cannot serve at a subpath natively (custom domains are
 > full hostnames), so the final domain is served from the prod server while

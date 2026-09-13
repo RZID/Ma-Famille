@@ -1,4 +1,6 @@
-# Cloudflared ingress snippet for the prod server tunnel.
+# Cloudflared ingress snippet for the TUNNEL host (here: separate LXC).
+# The app itself runs on the backend VM, so point at the VM's LAN IP —
+# NOT 127.0.0.1 (that would be this LXC's own loopback).
 # Merge the college.rzidinc.com rule into the existing config.yml
 # (specific paths first, catch-all last), then: cloudflared tunnel restart.
 tunnel: <tunnel-id>
@@ -7,6 +9,6 @@ credentials-file: /root/.cloudflared/<tunnel-id>.json
 ingress:
   - hostname: college.rzidinc.com
     path: /ma-famille/*
-    service: http://127.0.0.1:8080
+    service: http://192.168.1.50:8080 # <-- LAN IP of the backend VM
   # ... existing rules for the rest of college.rzidinc.com ...
   - service: http_status:404
