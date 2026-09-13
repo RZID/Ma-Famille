@@ -67,8 +67,8 @@ jobs:
         run: |
           npm --prefix frontend ci
           npm --prefix frontend run build
-          ssh prod "mkdir -p '$DEPLOY_APP_DIR/../edge-dist'"
-          scp -r frontend/dist prod:"$DEPLOY_APP_DIR/../edge-dist/ma-famille"
+          ssh prod "mkdir -p '$DEPLOY_APP_DIR/../edge-dist/ma-famille'"
+          scp -r frontend/dist/. prod:"$DEPLOY_APP_DIR/../edge-dist/ma-famille/"
         env:
           VITE_BASE_PATH: /ma-famille/
           VITE_API_URL: https://college-api.rzidinc.com/ma-famille
