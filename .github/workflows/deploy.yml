@@ -50,7 +50,7 @@ jobs:
 
       - name: Deliver tarball
         run: |
-          ssh prod 'mkdir -p "$DEPLOY_APP_DIR"'
+          ssh prod "mkdir -p '$DEPLOY_APP_DIR'"
           scp /tmp/app.tgz prod:"$DEPLOY_APP_DIR/app.tgz"
         env:
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
