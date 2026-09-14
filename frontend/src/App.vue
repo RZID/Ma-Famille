@@ -1,10 +1,15 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppNav from './components/AppNav.vue'
+
+const route = useRoute()
+const showNavigation = computed(() => route.name !== 'login')
 </script>
 
 <template>
   <div class="flex min-h-screen flex-col bg-white text-gray-900">
-    <AppNav />
+    <AppNav v-if="showNavigation" />
     <main class="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
       <RouterView />
     </main>
