@@ -1,5 +1,12 @@
+<script setup>
+import BookingCalendar from '../components/BookingCalendar.vue'
+import LocationPanel from '../components/LocationPanel.vue'
+</script>
+
 <template>
   <section class="space-y-4">
+    <BookingCalendar />
+    <LocationPanel />
     <h1 class="text-3xl font-semibold tracking-tight">Sports Venue Booking</h1>
     <p class="text-gray-600">
       Foundation iteration — mono-repo structure, API client, and health check only.

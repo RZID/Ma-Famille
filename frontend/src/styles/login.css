@@ -1,0 +1,88 @@
+.login-page {
+  --login-overlay: rgb(15 23 42 / 55%);
+  --login-card-background: #ffffff;
+  --login-card-border: #e5e7eb;
+  --login-heading: #ffffff;
+  --login-eyebrow: #f49158;
+  --login-description: #fff892;
+  --login-label: #514837;
+  --login-body-text: #4b5563;
+  --login-input-text: #111827;
+  --login-input-border: #d1d5db;
+  --login-input-background: #ffffff;
+  --login-accent: #eb9225;
+  --login-accent-hover: #fff423;
+  --login-accent-focus: rgba(219, 209, 179, 0.18);
+  --login-body-text-acc: #fff892;
+}
+
+.login-overlay {
+  background: var(--login-overlay);
+}
+
+.login-eyebrow {
+  color: var(--login-eyebrow);
+}
+
+.login-title {
+  color: var(--login-heading);
+}
+
+.login-description {
+  color: var(--login-description);
+}
+
+.login-card {
+  border-color: var(--login-card-border);
+  background: var(--login-card-background);
+}
+
+.login-label {
+  color: var(--login-label);
+}
+
+.login-input {
+  border-color: var(--login-input-border);
+  background: var(--login-input-background);
+  color: var(--login-input-text);
+}
+
+.login-input::placeholder {
+  color: var(--login-body-text);
+  opacity: 0.65;
+}
+
+.login-input:focus {
+  border-color: var(--login-accent);
+  box-shadow: 0 0 0 3px var(--login-accent-focus);
+}
+
+.login-body-text {
+  color: var(--login-body-text);
+}
+
+.login-body-text-acc {
+  color: var(--login-body-text-acc);
+}
+
+.login-link {
+  color: var(--login-accent);
+}
+
+.login-link:hover {
+  color: var(--login-accent-hover);
+}
+
+.login-button {
+  background: var(--login-accent);
+  color: #ffffff;
+}
+
+.login-button:hover {
+  background: var(--login-accent-hover);
+}
+
+.login-button:focus-visible {
+  outline: 2px solid var(--login-accent);
+  outline-offset: 2px;
+}

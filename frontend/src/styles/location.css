@@ -1,0 +1,88 @@
+.location-panel {
+  --location-heading: #111827;
+  --location-border: #d1d5db;
+  --location-map-background: #f8fafc;
+  --location-button-background: #f79e0e;
+  --location-button-hover: #f9ef29;
+  --location-button-text: #ffffff;
+}
+
+.location-panel-title {
+  margin: 0 0 1rem;
+  color: var(--location-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.location-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: 1rem;
+}
+
+.location-preview {
+  min-width: 0;
+}
+
+.location-map-frame {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--location-border);
+  border-radius: 0.75rem;
+  background: var(--location-map-background);
+}
+
+.location-map-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.location-button {
+  width: 100%;
+  margin-top: 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--location-button-background);
+  color: var(--location-button-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.location-button:hover {
+  background: var(--location-button-hover);
+}
+
+.location-button:active {
+  transform: translateY(1px);
+}
+
+.location-button:focus-visible {
+  outline: 2px solid var(--location-button-background);
+  outline-offset: 3px;
+}
+
+.location-filter {
+  min-height: 0;
+  border: 1px solid var(--location-border);
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .location-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .location-button {
+    transition: none;
+  }
+}

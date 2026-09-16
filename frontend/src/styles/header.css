@@ -1,0 +1,59 @@
+.app-header {
+  --header-background: #ffffff;
+  --header-border: #e5e7eb;
+  --header-brand: #111827;
+  --header-menu-icon: #374151;
+  --header-menu-icon-hover: #f3f4f6;
+  --header-sidebar-background: #ffffff;
+  --header-sidebar-border: #e5e7eb;
+  --header-sidebar-text: #374151;
+  --header-sidebar-hover: #f3f4f6;
+  --header-backdrop: rgb(15 23 42 / 40%);
+}
+
+.app-header-bar {
+  border-color: var(--header-border);
+  background: var(--header-background);
+}
+
+.app-header-brand {
+  color: var(--header-brand);
+}
+
+.app-header-menu-button {
+  color: var(--header-menu-icon);
+}
+
+.app-header-menu-button:hover {
+  background: var(--header-menu-icon-hover);
+}
+
+.app-header-backdrop {
+  background: var(--header-backdrop);
+}
+
+.app-sidebar {
+  border-color: var(--header-sidebar-border);
+  background: var(--header-sidebar-background);
+  transform: translateX(100%);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.app-sidebar.is-open {
+  transform: translateX(0);
+}
+
+.app-sidebar-link {
+  color: var(--header-sidebar-text);
+}
+
+.app-sidebar-link:hover {
+  background: var(--header-sidebar-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar {
+    transition: none;
+  }
+}
