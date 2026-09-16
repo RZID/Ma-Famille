@@ -1,8 +1,10 @@
 name: deploy
 
-# Backend only (frontend ships via Cloudflare Pages). GitHub-hosted runners
-# deliver to the prod server over SSH through the Cloudflare Tunnel —
-# no self-hosted runner, no public IP. See docs/DEPLOYMENT.md.
+# Backend + frontend edge dist. GitHub-hosted runners deliver to the
+# prod server over SSH through the Cloudflare Tunnel — no self-hosted
+# runner, no public IP. See docs/DEPLOYMENT.md.
+# Logic lives in scripts/deploy-{backend,frontend}.sh so local SSH deploy
+# and CI use the same path.
 #
 # Required secrets: SSH_PRIVATE_KEY, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET
 # Optional vars: DEPLOY_HOST (default be-ssh.rzidinc.com),
@@ -12,7 +14,6 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "frontend/**"
       - "docs/**"
   workflow_dispatch:
 
@@ -45,36 +46,6 @@ jobs:
           chmod +x ~/cfssh
           printf 'Host prod\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy\n  StrictHostKeyChecking accept-new\n  ProxyCommand ~/cfssh %%h\n' "$DEPLOY_HOST" "$DEPLOY_USER" > ~/.ssh/config
 
-      - name: Pack sources
-        run: git archive --format=tar.gz -o /tmp/app.tgz HEAD
-
-      - name: Deliver tarball
-        run: |
-          ssh prod "mkdir -p '$DEPLOY_APP_DIR'"
-          scp /tmp/app.tgz prod:"$DEPLOY_APP_DIR/app.tgz"
-        env:
-          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Build and deliver frontend dist
-        run: |
-          npm --prefix frontend ci
-          npm --prefix frontend run build
-          ssh prod "mkdir -p '$DEPLOY_APP_DIR/../edge-dist/ma-famille'"
-          scp -r frontend/dist/. prod:"$DEPLOY_APP_DIR/../edge-dist/ma-famille/"
-        env:
-          VITE_BASE_PATH: /ma-famille/
-          VITE_API_URL: https://college-api.rzidinc.com/ma-famille
-          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-
       - name: Preflight prod server
         run: |
           ssh prod "APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
@@ -99,39 +70,29 @@ jobs:
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
-      - name: Deploy on prod server
-        # Quoted heredoc: NOTHING expands on the runner. Everything with $
-        # runs on the server. (An unquoted heredoc once expanded $(seq) into
-        # newlines and $i into emptiness — breaking busybox ash remotely.)
-        run: |
-          ssh prod "DEPLOY_APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
-          set -e
-          cd "$DEPLOY_APP_DIR"
-          tar xzf app.tgz && rm app.tgz
-          if podman compose version >/dev/null 2>&1; then COMPOSE="podman compose"; else COMPOSE="podman-compose"; fi
-          # Down first: old compose keeps stale containers instead of recreating.
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml down 2>/dev/null || true
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
-          if command -v curl >/dev/null; then FETCH="curl -fsS"; else FETCH="wget -q -O /dev/null"; fi
-          i=0
-          while [ $i -lt 30 ]; do
-            if $FETCH http://127.0.0.1:8000/ma-famille/v1/health >/dev/null; then
-              echo "prod api healthy"
-              exit 0
-            fi
-            sleep 2
-            i=$((i + 1))
-          done
-          echo "prod stack never became healthy" >&2
-          $COMPOSE -f docker-compose.yml -f compose.prod.yml logs --tail=50 api
-          exit 1
-          EOF
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Deploy backend via script
+        run: bash scripts/deploy-backend.sh
         env:
+          DEPLOY_HOST: prod
+          DEPLOY_USER: ${{ env.DEPLOY_USER }}
+          DEPLOY_APP_DIR: ${{ env.DEPLOY_APP_DIR }}
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
-      - name: Prune old images
-        run: ssh prod 'podman image prune -f'
+      - name: Deploy frontend via script
+        run: bash scripts/deploy-frontend.sh
         env:
+          DEPLOY_HOST: prod
+          DEPLOY_USER: ${{ env.DEPLOY_USER }}
+          DEPLOY_APP_DIR: ${{ env.DEPLOY_APP_DIR }}
+          VITE_BASE_PATH: /ma-famille/
+          VITE_API_URL: https://college-api.rzidinc.com/ma-famille
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
