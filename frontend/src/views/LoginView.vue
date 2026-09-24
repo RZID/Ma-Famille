@@ -24,8 +24,8 @@ function handleSubmit() {
 
     <div class="w-full max-w-md space-y-8">
       <div class="space-y-3 text-center">
-        <p class="login-eyebrow text-sm font-semibold uppercase tracking-[0.2em]">Welcome</p>
-        <h1 class="login-title text-3xl font-semibold tracking-tight">Ma Famille!</h1>
+        <p class="login-eyebrow text-sm font-semibold uppercase tracking-[0.2em]">Welcome,</p>
+        <h1 class="login-title text-3xl tracking-tight">Ma Famille!</h1>
         <p class="login-description">Book your next court session in a few clicks</p>
       </div>
 

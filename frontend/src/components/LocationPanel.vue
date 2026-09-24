@@ -1,5 +1,6 @@
 <script setup>
 import mapOfJakartaCinere from '../assets/MapofJakartaCinere.svg'
+import VenueFilters from './VenueFilters.vue'
 import '../styles/location.css'
 </script>
 
@@ -19,7 +20,9 @@ import '../styles/location.css'
         <button type="button" class="location-button">See all locations</button>
       </div>
 
-      <div class="location-filter" aria-label="Location filter, coming soon" />
+      <div class="location-filter">
+        <VenueFilters />
+      </div>
     </div>
   </section>
 </template>
