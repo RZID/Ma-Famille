@@ -76,14 +76,11 @@ jobs:
 
       - name: Keep the edge able to pass a websocket through
         run: |
-          scp scripts/patch_edge_websocket.py scripts/patch-edge-websocket.sh prod:/tmp/
-          ssh prod "sh -s" <<'EOF'
-          set -e
-          mkdir -p ~/scripts
-          cp /tmp/patch_edge_websocket.py /tmp/patch-edge-websocket.sh ~/scripts/
-          rm -f /tmp/patch_edge_websocket.py /tmp/patch-edge-websocket.sh
-          sh ~/scripts/patch-edge-websocket.sh /home/deploy/edge/nginx.conf
-          EOF
+          # The files go over stdin rather than scp: the tunnel drops the
+          # extra connection often enough to fail a deploy over it.
+          ssh prod 'mkdir -p ~/scripts && cat > ~/scripts/patch_edge_websocket.py' < scripts/patch_edge_websocket.py
+          ssh prod 'cat > ~/scripts/patch-edge-websocket.sh' < scripts/patch-edge-websocket.sh
+          ssh prod 'sh ~/scripts/patch-edge-websocket.sh /home/deploy/edge/nginx.conf'
 
       - name: Setup node
         uses: actions/setup-node@v4
