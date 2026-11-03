@@ -84,6 +84,9 @@ jobs:
           sh scripts/ssh-retry.sh ssh prod 'mkdir -p ~/scripts && cat > ~/scripts/patch_edge_websocket.py' < scripts/patch_edge_websocket.py
           sh scripts/ssh-retry.sh ssh prod 'cat > ~/scripts/patch-edge-websocket.sh' < scripts/patch-edge-websocket.sh
           sh scripts/ssh-retry.sh ssh prod 'sh ~/scripts/patch-edge-websocket.sh /home/deploy/edge/nginx.conf'
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
 
       - name: Setup node
         uses: actions/setup-node@v4
