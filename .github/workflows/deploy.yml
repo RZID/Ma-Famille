@@ -52,7 +52,7 @@ jobs:
 
       - name: Preflight prod server
         run: |
-          ssh prod "APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
+          sh scripts/ssh-retry.sh ssh prod "APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
           set -e
           fail() { echo "PREFLIGHT FAIL: $1" >&2; exit 1; }
           missing=""
@@ -77,10 +77,13 @@ jobs:
       - name: Keep the edge able to pass a websocket through
         run: |
           # The files go over stdin rather than scp: the tunnel drops the
-          # extra connection often enough to fail a deploy over it.
-          ssh prod 'mkdir -p ~/scripts && cat > ~/scripts/patch_edge_websocket.py' < scripts/patch_edge_websocket.py
-          ssh prod 'cat > ~/scripts/patch-edge-websocket.sh' < scripts/patch-edge-websocket.sh
-          ssh prod 'sh ~/scripts/patch-edge-websocket.sh /home/deploy/edge/nginx.conf'
+          # extra connection often enough to fail a deploy over it. Every
+          # call branches through scripts/ssh-retry.sh — the tunnel answers
+          # one connection but often refuses the next one ("websocket: bad
+          # handshake"), so each step retries instead of failing the deploy.
+          sh scripts/ssh-retry.sh ssh prod 'mkdir -p ~/scripts && cat > ~/scripts/patch_edge_websocket.py' < scripts/patch_edge_websocket.py
+          sh scripts/ssh-retry.sh ssh prod 'cat > ~/scripts/patch-edge-websocket.sh' < scripts/patch-edge-websocket.sh
+          sh scripts/ssh-retry.sh ssh prod 'sh ~/scripts/patch-edge-websocket.sh /home/deploy/edge/nginx.conf'
 
       - name: Setup node
         uses: actions/setup-node@v4

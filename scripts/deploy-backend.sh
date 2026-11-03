@@ -15,10 +15,14 @@ DEPLOY_USER="${DEPLOY_USER:-deploy}"
 DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/home/deploy/ma-famille}"
 SSH_OPTS="${SSH_OPTS:-}"
 
-SSH="ssh $SSH_OPTS $DEPLOY_USER@$DEPLOY_HOST"
-SCP="scp $SSH_OPTS"
-
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Every ssh/scp call goes through scripts/ssh-retry.sh: the prod tunnel
+# refuses a connection opened right after the previous one closed
+# ("websocket: bad handshake"), and a deploy opens several in a row.
+SSH() { "$REPO_ROOT/scripts/ssh-retry.sh" ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" "$@"; }
+SCP() { "$REPO_ROOT/scripts/ssh-retry.sh" scp $SSH_OPTS "$@"; }
+
 TARBALL="/tmp/mafamille-app.tgz"
 
 echo "==> pack HEAD -> $TARBALL"

@@ -18,10 +18,12 @@ SSH_OPTS="${SSH_OPTS:-}"
 export VITE_BASE_PATH="${VITE_BASE_PATH:-/ma-famille/}"
 export VITE_API_URL="${VITE_API_URL:-https://college-api.rzidinc.com/ma-famille}"
 
-SSH="ssh $SSH_OPTS $DEPLOY_USER@$DEPLOY_HOST"
-SCP="scp $SSH_OPTS"
-
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Every ssh/scp call goes through scripts/ssh-retry.sh — same reason as in
+# deploy-backend.sh: the prod tunnel drops back-to-back SSH sessions.
+SSH() { "$REPO_ROOT/scripts/ssh-retry.sh" ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" "$@"; }
+SCP() { "$REPO_ROOT/scripts/ssh-retry.sh" scp $SSH_OPTS "$@"; }
 
 echo "==> build frontend (BASE=$VITE_BASE_PATH API=$VITE_API_URL)"
 npm --prefix "$REPO_ROOT/frontend" ci
