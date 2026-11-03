@@ -29,10 +29,10 @@ echo "==> build frontend (BASE=$VITE_BASE_PATH API=$VITE_API_URL)"
 npm --prefix "$REPO_ROOT/frontend" ci
 npm --prefix "$REPO_ROOT/frontend" run build
 
-echo "==> deliver dist/ ke $DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR"
+echo "==> deliver dist/ to $DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR"
 # shellcheck disable=SC2086
 SSH "mkdir -p '$EDGE_DIR'"
 # shellcheck disable=SC2086
 SCP -r "$REPO_ROOT/frontend/dist/." "$DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR/"
 
-echo "OK: frontend terkirim. Pastikan static server serve $EDGE_DIR di /ma-famille/"
+echo "OK: frontend delivered. Make sure the static server serves $EDGE_DIR at /ma-famille/"

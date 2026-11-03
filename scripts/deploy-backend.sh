@@ -93,13 +93,13 @@ REMOTE
   rm -f "$PAYLOAD"
 fi
 
-echo "==> deliver ke $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR"
+echo "==> deliver to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR"
 # shellcheck disable=SC2086
 SSH "mkdir -p '$DEPLOY_APP_DIR'"
 # shellcheck disable=SC2086
 SCP "$TARBALL" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR/app.tgz"
 
-echo "==> deploy di server (podman compose up -d --build)"
+echo "==> deploy on the server (compose up -d --build)"
 # shellcheck disable=SC2086
 SSH "DEPLOY_APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
 set -e
@@ -158,7 +158,7 @@ if command -v podman-compose >/dev/null 2>&1; then
 else
   COMPOSE="podman compose"
 fi
-# Down dulu: compose lama kadang keep container stale.
+# Bring the stack down first: the old compose occasionally keeps a stale container.
 $COMPOSE -f docker-compose.yml -f compose.prod.yml down 2>/dev/null || true
 $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
 if command -v curl >/dev/null; then FETCH="curl -fsS"; else FETCH="wget -q -O /dev/null"; fi
@@ -190,4 +190,4 @@ echo "==> prune old images"
 # shellcheck disable=SC2086
 SSH 'podman image prune -f' || true
 
-echo "OK: backend live. Cek: curl http://127.0.0.1:8000/ma-famille/v1/health (di server)"
+echo "OK: backend live. Check: curl http://127.0.0.1:8000/ma-famille/v1/health (on the server)"
