@@ -89,19 +89,19 @@ echo "DOKU keys written to backend/.env"
 REMOTE
   } > "$PAYLOAD"
   # shellcheck disable=SC2086
-  $SSH "sh -s" < "$PAYLOAD"
+  SSH "sh -s" < "$PAYLOAD"
   rm -f "$PAYLOAD"
 fi
 
 echo "==> deliver ke $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR"
 # shellcheck disable=SC2086
-$SSH "mkdir -p '$DEPLOY_APP_DIR'"
+SSH "mkdir -p '$DEPLOY_APP_DIR'"
 # shellcheck disable=SC2086
-$SCP "$TARBALL" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR/app.tgz"
+SCP "$TARBALL" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_APP_DIR/app.tgz"
 
 echo "==> deploy di server (podman compose up -d --build)"
 # shellcheck disable=SC2086
-$SSH "DEPLOY_APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
+SSH "DEPLOY_APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
 set -e
 cd "$DEPLOY_APP_DIR"
 tar xzf app.tgz && rm app.tgz
@@ -174,6 +174,6 @@ EOF
 
 echo "==> prune old images"
 # shellcheck disable=SC2086
-$SSH 'podman image prune -f' || true
+SSH 'podman image prune -f' || true
 
 echo "OK: backend live. Cek: curl http://127.0.0.1:8000/ma-famille/v1/health (di server)"

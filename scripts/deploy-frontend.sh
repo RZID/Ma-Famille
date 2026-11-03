@@ -31,8 +31,8 @@ npm --prefix "$REPO_ROOT/frontend" run build
 
 echo "==> deliver dist/ ke $DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR"
 # shellcheck disable=SC2086
-$SSH "mkdir -p '$EDGE_DIR'"
+SSH "mkdir -p '$EDGE_DIR'"
 # shellcheck disable=SC2086
-$SCP -r "$REPO_ROOT/frontend/dist/." "$DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR/"
+SCP -r "$REPO_ROOT/frontend/dist/." "$DEPLOY_USER@$DEPLOY_HOST:$EDGE_DIR/"
 
 echo "OK: frontend terkirim. Pastikan static server serve $EDGE_DIR di /ma-famille/"
