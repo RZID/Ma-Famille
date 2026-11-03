@@ -104,7 +104,12 @@ echo "==> deploy di server (podman compose up -d --build)"
 SSH "DEPLOY_APP_DIR='$DEPLOY_APP_DIR' sh -s" <<'EOF'
 set -e
 cd "$DEPLOY_APP_DIR"
-tar xzf app.tgz && rm app.tgz
+# A retry can land here after the previous attempt extracted and removed the
+# tarball; the archive is only skipped once extraction is known to have
+# completed, otherwise a corrupt upload would go unnoticed.
+if [ -f app.tgz ]; then
+  tar xzf app.tgz && rm app.tgz
+fi
 
 # A dump before anything touches the database. The migrations that came with
 # this release remove rows the old seeds left behind, and "we meant to" is not
@@ -143,7 +148,16 @@ if [ -n "${DATABASE_URL:-}" ]; then
 else
   echo "WARNING: no DATABASE_URL found - no backup was taken" >&2
 fi
-if podman compose version >/dev/null 2>&1; then COMPOSE="podman compose"; else COMPOSE="podman-compose"; fi
+# The remote compose command: podman-compose is asked for first. `podman
+# compose` (which merely delegates to an external provider binary) also
+# passes version checks, and since the podman upgrade on the server it
+# delegates to the docker compose plugin, which then waits for a docker
+# socket the rootless service has no listener on — deterministic failure.
+if command -v podman-compose >/dev/null 2>&1; then
+  COMPOSE="podman-compose"
+else
+  COMPOSE="podman compose"
+fi
 # Down dulu: compose lama kadang keep container stale.
 $COMPOSE -f docker-compose.yml -f compose.prod.yml down 2>/dev/null || true
 $COMPOSE -f docker-compose.yml -f compose.prod.yml up -d --build
